@@ -1,5 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { TradingProvider } from "./contexts/TradingContext";
 import Index from "./pages/Index";
 import MarketPage from "./pages/Market";
 import WatchlistPage from "./pages/Watchlist";
@@ -14,17 +15,19 @@ import "./App.css";
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/market" element={<MarketPage />} />
-        <Route path="/watchlist" element={<WatchlistPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/portfolio" element={<PortfolioPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/help" element={<HelpPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
+      <TradingProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/market" element={<MarketPage />} />
+          <Route path="/watchlist" element={<WatchlistPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/help" element={<HelpPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
+      </TradingProvider>
     </Router>
   );
 }

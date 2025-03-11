@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { stocks, Stock } from '../data/stocks';
 import { toast } from '@/components/ui/use-toast';
@@ -294,7 +295,7 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
     case 'RESET_PORTFOLIO': {
       return {
         ...state,
-        cash: initialState.cash,
+        cash: getInitialState().cash,
         holdings: [],
         transactions: [],
         orders: state.orders.filter(order => order.status !== 'PENDING')
