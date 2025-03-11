@@ -4,10 +4,14 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { TradingProvider } from '@/contexts/TradingContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTrading } from '@/contexts/TradingContext';
-import { formatCurrency, formatDateTime } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 export default function OrdersPage() {
   const { state } = useTrading();
+
+  const formatDateTime = (date: Date) => {
+    return new Date(date).toLocaleString();
+  };
 
   return (
     <TradingProvider>

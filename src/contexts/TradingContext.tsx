@@ -72,15 +72,34 @@ interface TradingContextType {
 
 const TradingContext = createContext<TradingContextType | undefined>(undefined);
 
-// Initial state
-const initialState: TradingState = {
-  cash: 1000000, // ₹10,00,000
-  holdings: [],
-  watchlist: [],
-  transactions: [],
-  orders: [],
-  stockData: stocks,
-  marketOpen: false,
+// Initial state from localStorage or default values
+const getInitialState = (): TradingState => {
+  const savedState = localStorage.getItem('tradingState');
+  if (savedState) {
+    const parsed = JSON.parse(savedState);
+    // Convert date strings back to Date objects
+    return {
+      ...parsed,
+      orders: parsed.orders.map((order: any) => ({
+        ...order,
+        createdAt: new Date(order.createdAt),
+        executedAt: order.executedAt ? new Date(order.executedAt) : undefined,
+      })),
+      transactions: parsed.transactions.map((transaction: any) => ({
+        ...transaction,
+        timestamp: new Date(transaction.timestamp),
+      })),
+    };
+  }
+  return {
+    cash: 1000000, // ₹10,00,000
+    holdings: [],
+    watchlist: [],
+    transactions: [],
+    orders: [],
+    stockData: stocks,
+    marketOpen: true, // Always open for demo
+  };
 };
 
 // Reducer function
@@ -264,10 +283,11 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
       };
     }
 
+    // Override SET_MARKET_STATUS to always return true
     case 'SET_MARKET_STATUS': {
       return {
         ...state,
-        marketOpen: action.isOpen,
+        marketOpen: true, // Always open for demo
       };
     }
 
@@ -289,111 +309,67 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
 
 // Provider component
 export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(tradingReducer, initialState);
+  const [state, dispatch] = useReducer(tradingReducer, getInitialState());
 
-  // Process pending market orders when market is open
+  // Save state to localStorage whenever it changes
   useEffect(() => {
-    if (state.marketOpen) {
-      // Process market orders
-      state.orders.forEach(order => {
-        if (order.status === 'PENDING' && order.orderType === 'MARKET') {
-          const stock = state.stockData.find(s => s.id === order.stockId);
-          if (stock) {
-            // Execute at current market price
-            dispatch({
-              type: 'EXECUTE_ORDER',
-              orderId: order.id,
-              executedPrice: stock.currentPrice,
-            });
-            toast({
-              title: "Order Executed",
-              description: `${order.type} ${order.quantity} ${order.stockSymbol} at ₹${stock.currentPrice.toFixed(2)}`,
-            });
-          }
+    localStorage.setItem('tradingState', JSON.stringify(state));
+  }, [state]);
+
+  // Process market orders immediately since market is always open
+  useEffect(() => {
+    state.orders.forEach(order => {
+      if (order.status === 'PENDING' && order.orderType === 'MARKET') {
+        const stock = state.stockData.find(s => s.id === order.stockId);
+        if (stock) {
+          dispatch({
+            type: 'EXECUTE_ORDER',
+            orderId: order.id,
+            executedPrice: stock.currentPrice,
+          });
+          toast({
+            title: "Order Executed",
+            description: `${order.type} ${order.quantity} ${order.stockSymbol} at ₹${stock.currentPrice.toFixed(2)}`,
+          });
         }
-      });
-    }
-  }, [state.marketOpen, state.orders, state.stockData]);
+      }
+    });
+  }, [state.orders, state.stockData]);
 
   // Check limit orders against current prices
   useEffect(() => {
-    if (state.marketOpen) {
-      state.orders.forEach(order => {
-        if (order.status === 'PENDING' && order.orderType === 'LIMIT' && order.limitPrice) {
-          const stock = state.stockData.find(s => s.id === order.stockId);
-          if (stock) {
-            const currentPrice = stock.currentPrice;
-            
-            // For BUY orders, execute if current price is <= limit price
-            // For SELL orders, execute if current price is >= limit price
-            if ((order.type === 'BUY' && currentPrice <= order.limitPrice) ||
-                (order.type === 'SELL' && currentPrice >= order.limitPrice)) {
-              dispatch({
-                type: 'EXECUTE_ORDER',
-                orderId: order.id,
-                executedPrice: currentPrice,
-              });
-              toast({
-                title: "Limit Order Executed",
-                description: `${order.type} ${order.quantity} ${order.stockSymbol} at ₹${currentPrice.toFixed(2)}`,
-              });
-            }
+    state.orders.forEach(order => {
+      if (order.status === 'PENDING' && order.orderType === 'LIMIT' && order.limitPrice) {
+        const stock = state.stockData.find(s => s.id === order.stockId);
+        if (stock) {
+          const currentPrice = stock.currentPrice;
+          
+          if ((order.type === 'BUY' && currentPrice <= order.limitPrice) ||
+              (order.type === 'SELL' && currentPrice >= order.limitPrice)) {
+            dispatch({
+              type: 'EXECUTE_ORDER',
+              orderId: order.id,
+              executedPrice: currentPrice,
+            });
+            toast({
+              title: "Limit Order Executed",
+              description: `${order.type} ${order.quantity} ${order.stockSymbol} at ₹${currentPrice.toFixed(2)}`,
+            });
           }
         }
-      });
-    }
-  }, [state.stockData, state.marketOpen]);
+      }
+    });
+  }, [state.stockData]);
 
-  // Simulate stock price updates every 3 seconds when market is open
+  // Simulate stock price updates every 3 seconds
   useEffect(() => {
-    let intervalId: number | null = null;
-    
-    if (state.marketOpen) {
-      intervalId = window.setInterval(() => {
-        dispatch({ type: 'UPDATE_STOCK_PRICES' });
-      }, 3000);
-    }
+    const intervalId = window.setInterval(() => {
+      dispatch({ type: 'UPDATE_STOCK_PRICES' });
+    }, 3000);
     
     return () => {
-      if (intervalId !== null) {
-        clearInterval(intervalId);
-      }
+      clearInterval(intervalId);
     };
-  }, [state.marketOpen]);
-
-  // Check market hours (9:15 AM to 3:30 PM IST, Monday to Friday)
-  useEffect(() => {
-    const checkMarketHours = () => {
-      const now = new Date();
-      const day = now.getDay();
-      let hours = now.getHours();
-      let minutes = now.getMinutes();
-      
-      // Convert to IST (UTC+5:30) for demo purposes
-      // In a real app, you might want to handle this differently
-      let istHours = (hours + 5) % 24; // Adjust for IST
-      let istMinutes = (minutes + 30) % 60;
-      if (minutes + 30 >= 60) {
-        istHours = (istHours + 1) % 24;
-      }
-      
-      // Check if it's a weekday (Monday-Friday) and within market hours
-      const isWeekday = day >= 1 && day <= 5;
-      const isMarketHours = (
-        (istHours > 9 || (istHours === 9 && istMinutes >= 15)) && // After 9:15 AM
-        (istHours < 15 || (istHours === 15 && istMinutes <= 30))  // Before 3:30 PM
-      );
-      
-      dispatch({ type: 'SET_MARKET_STATUS', isOpen: isWeekday && isMarketHours });
-    };
-    
-    // Initial check
-    checkMarketHours();
-    
-    // Check every minute
-    const timerId = setInterval(checkMarketHours, 60000);
-    
-    return () => clearInterval(timerId);
   }, []);
 
   // Provider methods
@@ -507,4 +483,3 @@ export const useTrading = () => {
   }
   return context;
 };
-

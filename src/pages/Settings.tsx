@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useTrading } from '@/contexts/TradingContext';
 import { formatCurrency } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 
 export default function SettingsPage() {
   const { state, resetPortfolio } = useTrading();
