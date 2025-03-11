@@ -8,6 +8,7 @@ import { formatCurrency, formatPercentage, getColorForChange } from '@/lib/utils
 import { MarketOverview } from './MarketOverview';
 import { WatchlistOverview } from './WatchlistOverview';
 import { PortfolioOverview } from './PortfolioOverview';
+import { Leaderboard } from './Leaderboard';
 
 export function Dashboard() {
   const { state } = useTrading();
@@ -102,22 +103,30 @@ export function Dashboard() {
         </Card>
       </div>
 
-      <Tabs defaultValue="market" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="market">Market Overview</TabsTrigger>
-          <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
-          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-        </TabsList>
-        <TabsContent value="market" className="space-y-4">
-          <MarketOverview />
-        </TabsContent>
-        <TabsContent value="watchlist" className="space-y-4">
-          <WatchlistOverview />
-        </TabsContent>
-        <TabsContent value="portfolio" className="space-y-4">
-          <PortfolioOverview />
-        </TabsContent>
-      </Tabs>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-4">
+        <div className="col-span-1 lg:col-span-3">
+          <Tabs defaultValue="market" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="market">Market Overview</TabsTrigger>
+              <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
+              <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+            </TabsList>
+            <TabsContent value="market" className="space-y-4">
+              <MarketOverview />
+            </TabsContent>
+            <TabsContent value="watchlist" className="space-y-4">
+              <WatchlistOverview />
+            </TabsContent>
+            <TabsContent value="portfolio" className="space-y-4">
+              <PortfolioOverview />
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        <div className="col-span-1">
+          <Leaderboard />
+        </div>
+      </div>
     </div>
   );
 }

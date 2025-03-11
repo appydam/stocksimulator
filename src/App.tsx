@@ -14,8 +14,8 @@ import "./App.css";
 
 function App() {
   return (
-    <Router>
-      <TradingProvider>
+    <TradingProvider>
+      <Router>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/market" element={<MarketPage />} />
@@ -27,8 +27,8 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
-      </TradingProvider>
-    </Router>
+      </Router>
+    </TradingProvider>
   );
 }
 

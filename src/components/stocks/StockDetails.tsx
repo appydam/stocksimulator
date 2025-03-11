@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Stock } from '@/data/stocks';
 import { formatCurrency, formatNumber, formatPercentage, getColorForChange } from '@/lib/utils';
 import { ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react';
+import { StockChart } from './StockChart';
 
 interface StockDetailsProps {
   stock: Stock;
@@ -29,6 +30,8 @@ export function StockDetails({ stock }: StockDetailsProps) {
           </div>
         </div>
       </div>
+      
+      <StockChart stock={stock} />
 
       <div className="grid grid-cols-2 gap-4">
         <DetailCard label="Open" value={formatCurrency(stock.open)} />

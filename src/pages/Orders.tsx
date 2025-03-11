@@ -4,12 +4,20 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTrading } from '@/contexts/TradingContext';
 import { formatCurrency } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 export default function OrdersPage() {
   const { state, cancelOrder } = useTrading();
 
   const formatDateTime = (date: Date) => {
-    return new Date(date).toLocaleString();
+    return new Date(date).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   return (
@@ -42,6 +50,7 @@ export default function OrdersPage() {
                       <th className="h-12 px-4 text-right align-middle font-medium">Price</th>
                       <th className="h-12 px-4 text-right align-middle font-medium">Total Value</th>
                       <th className="h-12 px-4 text-center align-middle font-medium">Status</th>
+                      <th className="h-12 px-4 text-center align-middle font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="[&_tr:last-child]:border-0">
@@ -84,6 +93,17 @@ export default function OrdersPage() {
                             }`}>
                               {order.status}
                             </span>
+                          </td>
+                          <td className="p-4 align-middle text-center">
+                            {order.status === 'PENDING' && (
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => cancelOrder(order.id)}
+                              >
+                                Cancel
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       );
