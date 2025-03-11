@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -49,5 +48,17 @@ export function getDate(): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+  });
+}
+
+export function formatDateTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
   });
 }
