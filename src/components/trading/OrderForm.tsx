@@ -22,8 +22,8 @@ type OrderFormData = {
 
 export function OrderForm({ stock, onComplete }: OrderFormProps) {
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
-  const [buyForm] = useForm<OrderFormData>();
-  const [sellForm] = useForm<OrderFormData>();
+  const buyForm = useForm<OrderFormData>();
+  const sellForm = useForm<OrderFormData>();
   const { state, placeOrder } = useTrading();
   
   // Get current holding for this stock if any

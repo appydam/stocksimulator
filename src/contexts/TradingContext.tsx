@@ -359,10 +359,10 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Convert to IST (UTC+5:30) for demo purposes
       // In a real app, you might want to handle this differently
-      const istHours = (hours + 5) % 24; // Adjust for IST
-      const istMinutes = (minutes + 30) % 60;
+      let istHours = (hours + 5) % 24; // Adjust for IST
+      let istMinutes = (minutes + 30) % 60;
       if (istMinutes >= 60) {
-        istHours += 1;
+        istHours = (istHours + 1) % 24;
       }
       
       // Check if it's a weekday (Monday-Friday) and within market hours
