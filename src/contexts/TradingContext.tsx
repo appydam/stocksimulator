@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { stocks, Stock } from '../data/stocks';
 import { toast } from '@/components/ui/use-toast';
@@ -58,7 +57,8 @@ type TradingAction =
   | { type: 'ADD_TO_WATCHLIST'; stockId: string }
   | { type: 'REMOVE_FROM_WATCHLIST'; stockId: string }
   | { type: 'UPDATE_STOCK_PRICES' }
-  | { type: 'SET_MARKET_STATUS'; isOpen: boolean };
+  | { type: 'SET_MARKET_STATUS'; isOpen: boolean }
+  | { type: 'RESET_PORTFOLIO' };
 
 // Create context
 interface TradingContextType {
@@ -67,6 +67,7 @@ interface TradingContextType {
   cancelOrder: (orderId: string) => void;
   addToWatchlist: (stockId: string) => void;
   removeFromWatchlist: (stockId: string) => void;
+  resetPortfolio: () => void;
 }
 
 const TradingContext = createContext<TradingContextType | undefined>(undefined);
@@ -270,6 +271,17 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
       };
     }
 
+    case 'RESET_PORTFOLIO': {
+      return {
+        ...state,
+        cash: initialState.cash,
+        holdings: [],
+        transactions: [],
+        orders: state.orders.filter(order => order.status !== 'PENDING')
+          .map(order => ({ ...order, status: 'CANCELED' })),
+      };
+    }
+
     default:
       return state;
   }
@@ -354,14 +366,14 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const checkMarketHours = () => {
       const now = new Date();
       const day = now.getDay();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
       
       // Convert to IST (UTC+5:30) for demo purposes
       // In a real app, you might want to handle this differently
       let istHours = (hours + 5) % 24; // Adjust for IST
       let istMinutes = (minutes + 30) % 60;
-      if (istMinutes >= 60) {
+      if (minutes + 30 >= 60) {
         istHours = (istHours + 1) % 24;
       }
       
@@ -469,13 +481,18 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const resetPortfolio = () => {
+    dispatch({ type: 'RESET_PORTFOLIO' });
+  };
+
   return (
     <TradingContext.Provider value={{ 
       state, 
       placeOrder, 
       cancelOrder, 
       addToWatchlist, 
-      removeFromWatchlist 
+      removeFromWatchlist,
+      resetPortfolio 
     }}>
       {children}
     </TradingContext.Provider>
@@ -490,3 +507,4 @@ export const useTrading = () => {
   }
   return context;
 };
+

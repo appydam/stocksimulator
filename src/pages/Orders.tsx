@@ -48,7 +48,7 @@ export default function OrdersPage() {
                         return (
                           <tr key={order.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                             <td className="p-4 align-middle">
-                              {formatDateTime(order.timestamp)}
+                              {formatDateTime(order.createdAt)}
                             </td>
                             <td className="p-4 align-middle">
                               <div>
@@ -58,19 +58,23 @@ export default function OrdersPage() {
                             </td>
                             <td className="p-4 align-middle text-center">
                               <span className={`px-2 py-1 rounded-full text-xs ${
-                                order.orderSide === 'BUY' 
+                                order.type === 'BUY' 
                                   ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
                                   : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
                               }`}>
-                                {order.orderSide}
+                                {order.type}
                               </span>
                             </td>
                             <td className="p-4 align-middle text-right">{order.quantity}</td>
-                            <td className="p-4 align-middle text-right">{formatCurrency(order.price)}</td>
-                            <td className="p-4 align-middle text-right">{formatCurrency(order.price * order.quantity)}</td>
+                            <td className="p-4 align-middle text-right">
+                              {formatCurrency(order.executedPrice || (order.limitPrice || 0))}
+                            </td>
+                            <td className="p-4 align-middle text-right">
+                              {formatCurrency((order.executedPrice || (order.limitPrice || 0)) * order.quantity)}
+                            </td>
                             <td className="p-4 align-middle text-center">
                               <span className={`px-2 py-1 rounded-full text-xs ${
-                                order.status === 'COMPLETED' 
+                                order.status === 'EXECUTED' 
                                   ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
                                   : order.status === 'PENDING'
                                     ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
