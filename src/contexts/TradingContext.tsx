@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { stocks, Stock } from '../data/stocks';
 import { toast } from '@/components/ui/use-toast';
@@ -75,23 +74,32 @@ const TradingContext = createContext<TradingContextType | undefined>(undefined);
 
 // Initial state from localStorage or default values
 const getInitialState = (): TradingState => {
-  const savedState = localStorage.getItem('tradingState');
-  if (savedState) {
-    const parsed = JSON.parse(savedState);
-    // Convert date strings back to Date objects
-    return {
-      ...parsed,
-      orders: parsed.orders.map((order: any) => ({
-        ...order,
-        createdAt: new Date(order.createdAt),
-        executedAt: order.executedAt ? new Date(order.executedAt) : undefined,
-      })),
-      transactions: parsed.transactions.map((transaction: any) => ({
-        ...transaction,
-        timestamp: new Date(transaction.timestamp),
-      })),
-    };
+  try {
+    const savedState = localStorage.getItem('tradingState');
+    if (savedState) {
+      const parsed = JSON.parse(savedState);
+      
+      // Convert date strings back to Date objects
+      return {
+        ...parsed,
+        orders: Array.isArray(parsed.orders) ? parsed.orders.map((order: any) => ({
+          ...order,
+          createdAt: new Date(order.createdAt),
+          executedAt: order.executedAt ? new Date(order.executedAt) : undefined,
+        })) : [],
+        transactions: Array.isArray(parsed.transactions) ? parsed.transactions.map((transaction: any) => ({
+          ...transaction,
+          timestamp: new Date(transaction.timestamp),
+        })) : [],
+        // Always use the latest stock data
+        stockData: stocks,
+      };
+    }
+  } catch (error) {
+    console.error("Error loading trading state from localStorage:", error);
+    // If there's an error, use default state
   }
+  
   return {
     cash: 1000000, // ₹10,00,000
     holdings: [],
@@ -284,7 +292,6 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
       };
     }
 
-    // Override SET_MARKET_STATUS to always return true
     case 'SET_MARKET_STATUS': {
       return {
         ...state,
@@ -314,7 +321,16 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('tradingState', JSON.stringify(state));
+    try {
+      localStorage.setItem('tradingState', JSON.stringify(state));
+    } catch (error) {
+      console.error("Error saving trading state to localStorage:", error);
+      toast({
+        title: "Storage Error",
+        description: "There was an error saving your data. Your changes may not persist when you close the app.",
+        variant: "destructive",
+      });
+    }
   }, [state]);
 
   // Process market orders immediately since market is always open
