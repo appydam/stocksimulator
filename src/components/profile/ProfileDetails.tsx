@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { updateProfile, updateSettings } from '@/store/userSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency, formatPercentage, formatNumber, getColorForChange } from '@/lib/utils';
@@ -8,10 +9,12 @@ import { ArrowUpRight, ArrowDownRight, User, Mail, Phone, MapPin, Calendar, Sett
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { toast } from '@/components/ui/use-toast';
 
 export function ProfileDetails() {
+  const dispatch = useAppDispatch();
   const { cash, holdings, transactions, stockData } = useAppSelector(state => state.trading);
-  const { username, email, joinDate, fullName, phone, address } = useAppSelector(state => state.user);
+  const { username, email, joinDate, fullName, phone, address, profile, settings, accountInfo } = useAppSelector(state => state.user);
   
   // Calculate portfolio metrics
   const portfolioValue = holdings.reduce((total, holding) => {
@@ -32,7 +35,7 @@ export function ProfileDetails() {
   const pnlPercentage = investedAmount > 0 ? (unrealizedPnL / investedAmount) * 100 : 0;
 
   // Format dates
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -40,8 +43,8 @@ export function ProfileDetails() {
     });
   };
 
-  const formatDateTime = (date: number | Date) => {
-    return new Date(date).toLocaleString('en-US', {
+  const formatDateTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -64,6 +67,14 @@ export function ProfileDetails() {
     avgReturn: pnlPercentage,
   };
 
+  const handleUpdateSettings = (settingName: keyof typeof settings, value: boolean) => {
+    dispatch(updateSettings({ [settingName]: value }));
+    toast({
+      title: "Settings Updated",
+      description: `${settingName} is now ${value ? 'enabled' : 'disabled'}`,
+    });
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <Card>
@@ -71,7 +82,7 @@ export function ProfileDetails() {
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex flex-col items-center space-y-3">
               <Avatar className="h-28 w-28">
-                <AvatarImage src="/placeholder.svg" alt={username} />
+                <AvatarImage src={profile.avatarUrl || "/placeholder.svg"} alt={username} />
                 <AvatarFallback>{fullName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
               <div className="text-center">
@@ -114,7 +125,7 @@ export function ProfileDetails() {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Member Since</span>
                   </div>
-                  <p className="text-sm pl-6">{formatDate(new Date(joinDate))}</p>
+                  <p className="text-sm pl-6">{formatDate(joinDate)}</p>
                 </div>
               </div>
               
@@ -398,19 +409,31 @@ export function ProfileDetails() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
                   <div className="flex items-center justify-between">
                     <p className="text-sm">Email Notifications</p>
-                    <div className="h-4 w-8 bg-green-500 rounded-full"></div>
+                    <div 
+                      className={`h-4 w-8 rounded-full cursor-pointer ${settings.emailAlerts ? 'bg-green-500' : 'bg-muted'}`}
+                      onClick={() => handleUpdateSettings('emailAlerts', !settings.emailAlerts)}
+                    ></div>
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-sm">Price Alerts</p>
-                    <div className="h-4 w-8 bg-green-500 rounded-full"></div>
+                    <div 
+                      className={`h-4 w-8 rounded-full cursor-pointer ${settings.notifications ? 'bg-green-500' : 'bg-muted'}`}
+                      onClick={() => handleUpdateSettings('notifications', !settings.notifications)}
+                    ></div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm">Order Confirmations</p>
-                    <div className="h-4 w-8 bg-green-500 rounded-full"></div>
+                    <p className="text-sm">SMS Alerts</p>
+                    <div 
+                      className={`h-4 w-8 rounded-full cursor-pointer ${settings.smsAlerts ? 'bg-green-500' : 'bg-muted'}`}
+                      onClick={() => handleUpdateSettings('smsAlerts', !settings.smsAlerts)}
+                    ></div>
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-sm">Market Updates</p>
-                    <div className="h-4 w-8 bg-muted rounded-full"></div>
+                    <div 
+                      className={`h-4 w-8 rounded-full cursor-pointer ${settings.dataSharing ? 'bg-green-500' : 'bg-muted'}`}
+                      onClick={() => handleUpdateSettings('dataSharing', !settings.dataSharing)}
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -428,9 +451,15 @@ export function ProfileDetails() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-sm font-medium">Two-Factor Authentication</p>
-                      <p className="text-xs text-muted-foreground">Not enabled</p>
+                      <p className="text-xs text-muted-foreground">{settings.twoFactorAuth ? 'Enabled' : 'Not enabled'}</p>
                     </div>
-                    <Button variant="outline" size="sm">Enable</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleUpdateSettings('twoFactorAuth', !settings.twoFactorAuth)}
+                    >
+                      {settings.twoFactorAuth ? 'Disable' : 'Enable'}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -440,17 +469,42 @@ export function ProfileDetails() {
                 <div className="p-4 bg-muted/30 rounded-lg space-y-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm font-medium">Default Order Type</p>
-                      <p className="text-xs text-muted-foreground">Market Order</p>
+                      <p className="text-sm font-medium">Auto-Renew Subscriptions</p>
+                      <p className="text-xs text-muted-foreground">{settings.autoRenew ? 'Enabled' : 'Disabled'}</p>
                     </div>
-                    <Button variant="outline" size="sm">Change</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleUpdateSettings('autoRenew', !settings.autoRenew)}
+                    >
+                      {settings.autoRenew ? 'Disable' : 'Enable'}
+                    </Button>
                   </div>
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm font-medium">Chart Preferences</p>
-                      <p className="text-xs text-muted-foreground">Candlestick view</p>
+                      <p className="text-sm font-medium">Public Profile</p>
+                      <p className="text-xs text-muted-foreground">{settings.publicProfile ? 'Visible to others' : 'Private'}</p>
                     </div>
-                    <Button variant="outline" size="sm">Customize</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleUpdateSettings('publicProfile', !settings.publicProfile)}
+                    >
+                      {settings.publicProfile ? 'Make Private' : 'Make Public'}
+                    </Button>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium">Dark Mode</p>
+                      <p className="text-xs text-muted-foreground">{settings.darkMode ? 'Enabled' : 'Disabled'}</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleUpdateSettings('darkMode', !settings.darkMode)}
+                    >
+                      {settings.darkMode ? 'Light Mode' : 'Dark Mode'}
+                    </Button>
                   </div>
                 </div>
               </div>
