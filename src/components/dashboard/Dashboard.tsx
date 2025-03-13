@@ -103,7 +103,7 @@ export function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-4">
         <div className="col-span-1 lg:col-span-3">
           <Tabs defaultValue="market" className="space-y-4">
             <TabsList>
@@ -123,7 +123,7 @@ export function Dashboard() {
           </Tabs>
         </div>
         
-        <div className="col-span-1 lg:col-span-2">
+        <div className="col-span-1">
           <Leaderboard />
         </div>
       </div>
