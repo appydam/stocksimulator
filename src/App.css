@@ -24,8 +24,9 @@
 /* Modal fixed heights for consistency */
 .tabs-content-fixed-height {
   min-height: 500px;
-  max-height: 70vh;
+  max-height: 500px;
   overflow-y: auto;
+  padding-right: 10px;
 }
 
 /* Styling for stock cards */

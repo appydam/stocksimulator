@@ -12,7 +12,7 @@ interface StockDetailsProps {
 
 export function StockDetails({ stock }: StockDetailsProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 tabs-content-fixed-height">
       <div className="flex items-baseline justify-between">
         <div>
           <div className="text-3xl font-bold">{formatCurrency(stock.currentPrice)}</div>

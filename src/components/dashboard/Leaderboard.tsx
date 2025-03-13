@@ -23,7 +23,7 @@ export function Leaderboard() {
   const currentUserRank = Math.floor(Math.random() * 10) + 1;
   
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center">
           <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
@@ -35,9 +35,9 @@ export function Leaderboard() {
           <table className="w-full text-sm text-left">
             <thead className="text-xs uppercase bg-muted/50">
               <tr>
-                <th scope="col" className="px-4 py-3 w-16">Rank</th>
-                <th scope="col" className="px-4 py-3">Trader</th>
-                <th scope="col" className="px-4 py-3 text-right">Return</th>
+                <th scope="col" className="px-2 py-2 w-12">Rank</th>
+                <th scope="col" className="px-2 py-2">Trader</th>
+                <th scope="col" className="px-2 py-2 text-right">Return</th>
               </tr>
             </thead>
             <tbody>
@@ -46,7 +46,7 @@ export function Leaderboard() {
                   key={user.userId} 
                   className={`border-b hover:bg-muted/50 ${user.rank === currentUserRank ? 'bg-primary/10' : ''}`}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-2">
                     {user.rank <= 3 ? (
                       <span className={`text-sm font-bold
                         ${user.rank === 1 ? 'text-yellow-500' : 
@@ -59,10 +59,10 @@ export function Leaderboard() {
                       <span className="text-sm">#{user.rank}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-medium">
+                  <td className="px-2 py-2 font-medium truncate">
                     {user.name} {user.rank === currentUserRank && <span className="text-xs text-muted-foreground ml-1">(You)</span>}
                   </td>
-                  <td className={`px-4 py-3 text-right font-medium ${getColorForChange(user.returnPercent)}`}>
+                  <td className={`px-2 py-2 text-right font-medium ${getColorForChange(user.returnPercent)}`}>
                     <span className="flex items-center justify-end">
                       {user.returnPercent > 0 ? (
                         <ArrowUp className="h-3 w-3 mr-1" />

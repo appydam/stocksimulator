@@ -19,7 +19,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-64'} flex h-screen flex-col border-r bg-background transition-all duration-300`}>
+    <div className={`${collapsed ? 'w-14' : 'w-56'} flex h-screen flex-col border-r bg-background transition-all duration-300`}>
       <div className="flex items-center justify-between p-4 h-14 border-b">
         {!collapsed && <span className="text-xl font-bold">TradeSimulate</span>}
         <Button 

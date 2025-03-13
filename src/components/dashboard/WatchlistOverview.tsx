@@ -54,7 +54,7 @@ export function WatchlistOverview() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[650px]">
           {selectedStock && (
             <>
               <DialogHeader>
@@ -72,15 +72,17 @@ export function WatchlistOverview() {
                   <TabsTrigger value="trade">Trade</TabsTrigger>
                   <TabsTrigger value="alerts">Price Alerts</TabsTrigger>
                 </TabsList>
-                <TabsContent value="details" className="space-y-4 pt-4">
-                  <StockDetails stock={selectedStock} />
-                </TabsContent>
-                <TabsContent value="trade" className="space-y-4 pt-4">
-                  <OrderForm stock={selectedStock} onComplete={() => setIsDialogOpen(false)} />
-                </TabsContent>
-                <TabsContent value="alerts" className="space-y-4 pt-4">
-                  <PriceAlerts stock={selectedStock} />
-                </TabsContent>
+                <div className="tabs-content-fixed-height">
+                  <TabsContent value="details" className="space-y-4 pt-4">
+                    <StockDetails stock={selectedStock} />
+                  </TabsContent>
+                  <TabsContent value="trade" className="space-y-4 pt-4">
+                    <OrderForm stock={selectedStock} onComplete={() => setIsDialogOpen(false)} />
+                  </TabsContent>
+                  <TabsContent value="alerts" className="space-y-4 pt-4">
+                    <PriceAlerts stock={selectedStock} />
+                  </TabsContent>
+                </div>
               </Tabs>
             </>
           )}
