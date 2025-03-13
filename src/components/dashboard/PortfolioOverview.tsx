@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTrading } from '@/contexts/TradingContext';
+import { useAppSelector } from '@/store/hooks';
 import { formatCurrency, formatNumber, formatPercentage, getColorForChange } from '@/lib/utils';
 import { Stock } from '@/data/stocks';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,13 +12,13 @@ import { Button } from '@/components/ui/button';
 import { ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react';
 
 export function PortfolioOverview() {
-  const { state } = useTrading();
+  const { holdings, stockData } = useAppSelector(state => state.trading);
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Create portfolio items with calculated values
-  const portfolioItems = state.holdings.map(holding => {
-    const stock = state.stockData.find(s => s.id === holding.stockId);
+  const portfolioItems = holdings.map(holding => {
+    const stock = stockData.find(s => s.id === holding.stockId);
     if (!stock) return null;
 
     const currentValue = stock.currentPrice * holding.quantity;
@@ -34,7 +34,7 @@ export function PortfolioOverview() {
     };
   }).filter(item => item !== null) as { 
     stock: Stock;
-    holding: typeof state.holdings[0];
+    holding: typeof holdings[0];
     currentValue: number;
     pnl: number;
     pnlPercentage: number;

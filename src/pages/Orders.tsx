@@ -2,12 +2,14 @@
 import React from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { useTrading } from '@/contexts/TradingContext';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { cancelOrder } from '@/store/tradingSlice';
 import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 export default function OrdersPage() {
-  const { state, cancelOrder } = useTrading();
+  const { orders, stockData } = useAppSelector(state => state.trading);
+  const dispatch = useAppDispatch();
 
   const formatDateTime = (date: Date) => {
     return new Date(date).toLocaleString('en-IN', {
@@ -25,7 +27,7 @@ export default function OrdersPage() {
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Order History</h1>
         
-        {state.orders.length === 0 ? (
+        {orders.length === 0 ? (
           <Card>
             <CardContent className="py-10">
               <div className="text-center">
@@ -54,8 +56,8 @@ export default function OrdersPage() {
                     </tr>
                   </thead>
                   <tbody className="[&_tr:last-child]:border-0">
-                    {state.orders.map((order) => {
-                      const stock = state.stockData.find(s => s.id === order.stockId);
+                    {orders.map((order) => {
+                      const stock = stockData.find(s => s.id === order.stockId);
                       return (
                         <tr key={order.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                           <td className="p-4 align-middle">
@@ -99,7 +101,7 @@ export default function OrdersPage() {
                               <Button 
                                 variant="destructive" 
                                 size="sm"
-                                onClick={() => cancelOrder(order.id)}
+                                onClick={() => dispatch(cancelOrder(order.id))}
                               >
                                 Cancel
                               </Button>

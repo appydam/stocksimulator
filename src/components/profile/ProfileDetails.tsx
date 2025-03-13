@@ -1,45 +1,26 @@
 
 import React, { useState } from 'react';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { updateProfile, updateSettings } from '@/store/userSlice';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useAppSelector } from '@/store/hooks';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatCurrency, formatPercentage, formatNumber, getColorForChange } from '@/lib/utils';
+import { ArrowUpRight, ArrowDownRight, User, Mail, Phone, MapPin, Calendar, Settings, History, PieChart, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { 
-  User, Mail, Phone, MapPin, Tag, Shield, Bell, 
-  CreditCard, LineChart, Settings, Edit, Save, Wallet,
-  PieChart, Briefcase, Calendar, Clock, Globe, TrendingUp,
-  ArrowDownRight, ArrowUpRight
-} from 'lucide-react';
-import { formatCurrency, formatPercentage, getColorForChange, formatDateTime } from '@/lib/utils';
 
 export function ProfileDetails() {
-  const dispatch = useAppDispatch();
-  const { profile, settings, accountInfo } = useAppSelector(state => state.user);
-  const { cash, holdings, stockData, transactions } = useAppSelector(state => state.trading);
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: profile.name,
-    email: profile.email,
-    phone: profile.phone,
-    address: profile.address,
-    occupation: profile.occupation,
-    bio: profile.bio
-  });
-
-  // Calculate portfolio stats
+  const { cash, holdings, transactions, stockData } = useAppSelector(state => state.trading);
+  const { username, email, joinDate, fullName, phone, address } = useAppSelector(state => state.user);
+  
+  // Calculate portfolio metrics
   const portfolioValue = holdings.reduce((total, holding) => {
     const stock = stockData.find(s => s.id === holding.stockId);
     return total + (stock ? stock.currentPrice * holding.quantity : 0);
   }, 0);
   
   const totalValue = cash + portfolioValue;
+  
   const investedAmount = holdings.reduce((total, holding) => total + holding.investedAmount, 0);
   
   const unrealizedPnL = holdings.reduce((total, holding) => {
@@ -50,531 +31,433 @@ export function ProfileDetails() {
   
   const pnlPercentage = investedAmount > 0 ? (unrealizedPnL / investedAmount) * 100 : 0;
 
-  // Mock trading stats
+  // Format dates
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatDateTime = (date: number | Date) => {
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Get recent transactions (last 5)
+  const recentTransactions = [...transactions]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 5);
+
+  // For demo purposes - calculate trading stats
   const tradingStats = {
+    winRate: 68.5,
+    avgHoldingPeriod: 14,
     totalTrades: transactions.length,
-    winRate: 65.8,
-    profitFactor: 2.78,
-    avgWin: 3200,
-    avgLoss: 1200,
-    largestWin: 12500,
-    largestLoss: 4800,
-    longestWinStreak: 7,
-    longestLossStreak: 3,
-    tradingDays: 124,
-    activeHoursPerDay: 3.5,
-  };
-
-  const handleProfileSave = () => {
-    setIsEditing(false);
-    dispatch(updateProfile(profileData));
-  };
-
-  const handleSettingChange = (key: string, value: boolean) => {
-    dispatch(updateSettings({ [key]: value }));
+    avgReturn: pnlPercentage,
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Profile</h1>
-        {isEditing ? (
-          <Button onClick={handleProfileSave} variant="default">
-            <Save className="h-4 w-4 mr-2" /> Save Changes
-          </Button>
-        ) : (
-          <Button onClick={() => setIsEditing(true)} variant="outline">
-            <Edit className="h-4 w-4 mr-2" /> Edit Profile
-          </Button>
-        )}
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-7">
-        <div className="col-span-7 md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Manage your profile details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-center mb-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile.avatarUrl} alt="Profile" />
-                  <AvatarFallback className="text-2xl">{profile.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
+    <div className="container mx-auto p-4 space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col items-center space-y-3">
+              <Avatar className="h-28 w-28">
+                <AvatarImage src="/placeholder.svg" alt={username} />
+                <AvatarFallback>{fullName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              </Avatar>
+              <div className="text-center">
+                <h2 className="text-xl font-bold">{fullName}</h2>
+                <p className="text-muted-foreground">{username}</p>
+              </div>
+              <Button variant="outline" size="sm">Edit Profile</Button>
+            </div>
+            
+            <Separator orientation="vertical" className="hidden md:block" />
+            
+            <div className="flex-1 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Email</span>
+                  </div>
+                  <p className="text-sm pl-6">{email}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Phone</span>
+                  </div>
+                  <p className="text-sm pl-6">{phone}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Address</span>
+                  </div>
+                  <p className="text-sm pl-6">{address}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Member Since</span>
+                  </div>
+                  <p className="text-sm pl-6">{formatDate(new Date(joinDate))}</p>
+                </div>
               </div>
               
-              <ProfileField 
-                icon={<User className="h-4 w-4" />}
-                label="Name"
-                value={profileData.name}
-                isEditing={isEditing}
-                onChange={(value) => setProfileData({...profileData, name: value})}
-              />
-              
-              <ProfileField 
-                icon={<Mail className="h-4 w-4" />}
-                label="Email"
-                value={profileData.email}
-                isEditing={isEditing}
-                onChange={(value) => setProfileData({...profileData, email: value})}
-              />
-              
-              <ProfileField 
-                icon={<Phone className="h-4 w-4" />}
-                label="Phone"
-                value={profileData.phone}
-                isEditing={isEditing}
-                onChange={(value) => setProfileData({...profileData, phone: value})}
-              />
-              
-              <ProfileField 
-                icon={<MapPin className="h-4 w-4" />}
-                label="Location"
-                value={profileData.address}
-                isEditing={isEditing}
-                onChange={(value) => setProfileData({...profileData, address: value})}
-              />
-              
-              <ProfileField 
-                icon={<Briefcase className="h-4 w-4" />}
-                label="Occupation"
-                value={profileData.occupation}
-                isEditing={isEditing}
-                onChange={(value) => setProfileData({...profileData, occupation: value})}
-              />
-              
-              <div className="pt-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Tag className="h-4 w-4" /> Bio
-                </label>
-                {isEditing ? (
-                  <textarea 
-                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={profileData.bio}
-                    onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                    rows={4}
-                  />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Account Value</p>
+                  <p className="text-lg font-semibold">{formatCurrency(totalValue)}</p>
+                </div>
+                
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Available Cash</p>
+                  <p className="text-lg font-semibold">{formatCurrency(cash)}</p>
+                </div>
+                
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Total P&L</p>
+                  <p className={`text-lg font-semibold ${getColorForChange(pnlPercentage)}`}>
+                    {formatCurrency(unrealizedPnL)}
+                  </p>
+                </div>
+                
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Total Trades</p>
+                  <p className="text-lg font-semibold">{tradingStats.totalTrades}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Tabs defaultValue="portfolio" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="portfolio" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Portfolio Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-card p-4 rounded-lg border">
+                    <p className="text-sm text-muted-foreground">Portfolio Value</p>
+                    <p className="text-2xl font-bold">{formatCurrency(portfolioValue)}</p>
+                    <p className={`text-sm flex items-center ${getColorForChange(pnlPercentage)}`}>
+                      {pnlPercentage > 0 ? (
+                        <ArrowUpRight className="h-3.5 w-3.5 mr-1" />
+                      ) : (
+                        <ArrowDownRight className="h-3.5 w-3.5 mr-1" />
+                      )}
+                      {formatPercentage(pnlPercentage)}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-card p-4 rounded-lg border">
+                    <p className="text-sm text-muted-foreground">Total Stocks</p>
+                    <p className="text-2xl font-bold">{holdings.length}</p>
+                    <p className="text-sm text-muted-foreground">Across {holdings.length} companies</p>
+                  </div>
+                  
+                  <div className="bg-card p-4 rounded-lg border">
+                    <p className="text-sm text-muted-foreground">Invested Amount</p>
+                    <p className="text-2xl font-bold">{formatCurrency(investedAmount)}</p>
+                    <p className="text-sm text-muted-foreground">Initial investment</p>
+                  </div>
+                </div>
+                
+                {holdings.length > 0 ? (
+                  <div className="relative w-full overflow-auto rounded-lg border">
+                    <table className="w-full caption-bottom text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="h-10 px-4 text-left align-middle font-medium">Stock</th>
+                          <th className="h-10 px-4 text-right align-middle font-medium">Quantity</th>
+                          <th className="h-10 px-4 text-right align-middle font-medium">Avg. Price</th>
+                          <th className="h-10 px-4 text-right align-middle font-medium">Current</th>
+                          <th className="h-10 px-4 text-right align-middle font-medium">Value</th>
+                          <th className="h-10 px-4 text-right align-middle font-medium">P&L</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {holdings.map(holding => {
+                          const stock = stockData.find(s => s.id === holding.stockId);
+                          if (!stock) return null;
+                          
+                          const currentValue = stock.currentPrice * holding.quantity;
+                          const pnl = currentValue - holding.investedAmount;
+                          const pnlPercent = (pnl / holding.investedAmount) * 100;
+                          
+                          return (
+                            <tr key={holding.stockId} className="border-t">
+                              <td className="px-4 py-2.5">{stock.symbol}</td>
+                              <td className="px-4 py-2.5 text-right">{formatNumber(holding.quantity, 0)}</td>
+                              <td className="px-4 py-2.5 text-right">{formatCurrency(holding.averageBuyPrice)}</td>
+                              <td className="px-4 py-2.5 text-right">{formatCurrency(stock.currentPrice)}</td>
+                              <td className="px-4 py-2.5 text-right">{formatCurrency(currentValue)}</td>
+                              <td className={`px-4 py-2.5 text-right ${getColorForChange(pnlPercent)}`}>
+                                <div className="flex items-center justify-end gap-1">
+                                  {pnlPercent > 0 ? (
+                                    <ArrowUpRight className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <ArrowDownRight className="h-3.5 w-3.5" />
+                                  )}
+                                  {formatCurrency(pnl)} ({formatPercentage(pnlPercent)})
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
-                  <p className="text-sm mt-1">{profileData.bio}</p>
+                  <div className="text-center py-8 bg-muted/50 rounded-lg">
+                    <p className="text-muted-foreground">Your portfolio is empty</p>
+                    <p className="text-sm text-muted-foreground mt-1">Start trading to build your portfolio</p>
+                  </div>
                 )}
               </div>
             </CardContent>
           </Card>
-          
+        </TabsContent>
+        
+        <TabsContent value="transactions" className="space-y-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Account Status</CardTitle>
-              <CardDescription>Your account information</CardDescription>
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Account Status</span>
+            <CardContent>
+              {transactions.length > 0 ? (
+                <div className="relative w-full overflow-auto rounded-lg border">
+                  <table className="w-full caption-bottom text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="h-10 px-4 text-left align-middle font-medium">Date & Time</th>
+                        <th className="h-10 px-4 text-left align-middle font-medium">Stock</th>
+                        <th className="h-10 px-4 text-center align-middle font-medium">Type</th>
+                        <th className="h-10 px-4 text-right align-middle font-medium">Quantity</th>
+                        <th className="h-10 px-4 text-right align-middle font-medium">Price</th>
+                        <th className="h-10 px-4 text-right align-middle font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map(transaction => (
+                        <tr key={transaction.id} className="border-t">
+                          <td className="px-4 py-2.5">{formatDateTime(transaction.timestamp)}</td>
+                          <td className="px-4 py-2.5">{transaction.stockSymbol}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className={`px-2 py-0.5 rounded-full text-xs ${
+                              transaction.type === 'BUY' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
+                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                            }`}>
+                              {transaction.type}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-right">{transaction.quantity}</td>
+                          <td className="px-4 py-2.5 text-right">{formatCurrency(transaction.price)}</td>
+                          <td className="px-4 py-2.5 text-right">{formatCurrency(transaction.total)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <span className="text-sm font-medium text-green-500">{accountInfo.status}</span>
+              ) : (
+                <div className="text-center py-8 bg-muted/50 rounded-lg">
+                  <p className="text-muted-foreground">No transactions found</p>
+                  <p className="text-sm text-muted-foreground mt-1">Your transaction history will appear here</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="performance" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Trading Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-card p-4 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <PieChart className="h-5 w-5 text-muted-foreground" />
+                    <span className={`text-sm font-medium ${pnlPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatPercentage(pnlPercentage)}
+                    </span>
+                  </div>
+                  <p className="text-lg font-semibold mt-2">Total Return</p>
+                  <p className="text-sm text-muted-foreground">All time</p>
+                </div>
+                
+                <div className="bg-card p-4 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{tradingStats.winRate}%</span>
+                  </div>
+                  <p className="text-lg font-semibold mt-2">Win Rate</p>
+                  <p className="text-sm text-muted-foreground">Profitable trades</p>
+                </div>
+                
+                <div className="bg-card p-4 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <History className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{tradingStats.avgHoldingPeriod} days</span>
+                  </div>
+                  <p className="text-lg font-semibold mt-2">Avg. Holding</p>
+                  <p className="text-sm text-muted-foreground">Time in position</p>
+                </div>
+                
+                <div className="bg-card p-4 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <Settings className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{tradingStats.totalTrades}</span>
+                  </div>
+                  <p className="text-lg font-semibold mt-2">Total Trades</p>
+                  <p className="text-sm text-muted-foreground">Completed trades</p>
+                </div>
               </div>
               
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  <span className="text-sm">Subscription</span>
-                </div>
-                <span className="text-sm font-medium">{accountInfo.subscription}</span>
+              <div className="text-center py-10 mb-4 bg-muted/50 rounded-lg">
+                <p className="text-muted-foreground">Performance chart will be available soon</p>
+                <p className="text-sm text-muted-foreground mt-1">Track your trading performance over time</p>
               </div>
               
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span className="text-sm">Member Since</span>
-                </div>
-                <span className="text-sm font-medium">{accountInfo.memberSince}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm">Last Login</span>
-                </div>
-                <span className="text-sm font-medium">{accountInfo.lastLogin}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  <span className="text-sm">Login Location</span>
-                </div>
-                <span className="text-sm font-medium">{accountInfo.loginLocation}</span>
+              <div className="space-y-3">
+                <h3 className="font-medium">Recent Activity</h3>
+                {recentTransactions.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentTransactions.map(transaction => (
+                      <div key={transaction.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                            transaction.type === 'BUY' ? 'bg-green-100' : 'bg-red-100'
+                          }`}>
+                            {transaction.type === 'BUY' ? (
+                              <ArrowUpRight className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <ArrowDownRight className="h-4 w-4 text-red-600" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">
+                              {transaction.type === 'BUY' ? 'Bought' : 'Sold'} {transaction.quantity} {transaction.stockSymbol}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDateTime(transaction.timestamp)}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium">
+                          {transaction.type === 'BUY' ? '-' : '+'}{formatCurrency(transaction.total)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 bg-muted/20 rounded-lg">
+                    <p className="text-sm text-muted-foreground">No recent activity</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
-        </div>
+        </TabsContent>
         
-        <div className="col-span-7 md:col-span-5">
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="performance">Performance</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center">
-                      <Wallet className="h-4 w-4 mr-2" />
-                      Total Value
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
-                    <p className="text-xs text-muted-foreground">Cash + Holdings</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center">
-                      <PieChart className="h-4 w-4 mr-2" />
-                      Invested Value
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(portfolioValue)}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {((portfolioValue / totalValue) * 100).toFixed(2)}% of total
-                    </p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Unrealized P&L
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className={`text-2xl font-bold ${getColorForChange(pnlPercentage)}`}>
-                      {formatCurrency(unrealizedPnL)}
-                    </div>
-                    <p className={`text-xs flex items-center ${getColorForChange(pnlPercentage)}`}>
-                      {pnlPercentage > 0 ? (
-                        <ArrowUpRight className="h-3 w-3 mr-1" />
-                      ) : pnlPercentage < 0 ? (
-                        <ArrowDownRight className="h-3 w-3 mr-1" />
-                      ) : (
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                      )}
-                      {formatPercentage(pnlPercentage)}
-                    </p>
-                  </CardContent>
-                </Card>
+        <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Notification Preferences</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm">Email Notifications</p>
+                    <div className="h-4 w-8 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm">Price Alerts</p>
+                    <div className="h-4 w-8 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm">Order Confirmations</p>
+                    <div className="h-4 w-8 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm">Market Updates</p>
+                    <div className="h-4 w-8 bg-muted rounded-full"></div>
+                  </div>
+                </div>
               </div>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Transactions</CardTitle>
-                  <CardDescription>Your latest trading activity</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {transactions.length > 0 ? (
-                    <div className="relative overflow-x-auto">
-                      <table className="w-full text-sm text-left">
-                        <thead className="text-xs uppercase bg-muted/50">
-                          <tr>
-                            <th scope="col" className="px-4 py-3">Stock</th>
-                            <th scope="col" className="px-4 py-3">Type</th>
-                            <th scope="col" className="px-4 py-3">Quantity</th>
-                            <th scope="col" className="px-4 py-3">Price</th>
-                            <th scope="col" className="px-4 py-3">Value</th>
-                            <th scope="col" className="px-4 py-3">Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {transactions.slice(0, 5).map((transaction, index) => {
-                            const stock = stockData.find(s => s.id === transaction.stockId);
-                            return (
-                              <tr key={index} className="border-b hover:bg-muted/50">
-                                <td className="px-4 py-3 font-medium">{stock?.symbol}</td>
-                                <td className={`px-4 py-3 ${transaction.type === 'BUY' ? 'text-green-500' : 'text-red-500'}`}>
-                                  {transaction.type}
-                                </td>
-                                <td className="px-4 py-3">{transaction.quantity}</td>
-                                <td className="px-4 py-3">{formatCurrency(transaction.price)}</td>
-                                <td className="px-4 py-3">{formatCurrency(transaction.price * transaction.quantity)}</td>
-                                <td className="px-4 py-3">{formatDateTime(transaction.timestamp.getTime())}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Security Settings</h3>
+                <div className="p-4 bg-muted/30 rounded-lg space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium">Change Password</p>
+                      <p className="text-xs text-muted-foreground">Last changed 3 months ago</p>
                     </div>
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No transactions found
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="performance" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Trading Statistics</CardTitle>
-                  <CardDescription>Your performance metrics</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <StatItem label="Total Trades" value={tradingStats.totalTrades.toString()} />
-                    <StatItem 
-                      label="Win Rate" 
-                      value={formatPercentage(tradingStats.winRate)}
-                      className="text-green-500"
-                    />
-                    <StatItem 
-                      label="Profit Factor" 
-                      value={tradingStats.profitFactor.toFixed(2)}
-                      className="text-blue-500"
-                    />
-                    <StatItem 
-                      label="Trading Days" 
-                      value={tradingStats.tradingDays.toString()} 
-                    />
-                    
-                    <StatItem 
-                      label="Avg. Win" 
-                      value={formatCurrency(tradingStats.avgWin)}
-                      className="text-green-500"
-                    />
-                    <StatItem 
-                      label="Avg. Loss" 
-                      value={formatCurrency(tradingStats.avgLoss)}
-                      className="text-red-500"
-                    />
-                    <StatItem 
-                      label="Largest Win" 
-                      value={formatCurrency(tradingStats.largestWin)}
-                      className="text-green-500"
-                    />
-                    <StatItem 
-                      label="Largest Loss" 
-                      value={formatCurrency(tradingStats.largestLoss)}
-                      className="text-red-500"
-                    />
-                    
-                    <StatItem 
-                      label="Win Streak" 
-                      value={tradingStats.longestWinStreak.toString()}
-                      className="text-green-500"
-                    />
-                    <StatItem 
-                      label="Loss Streak" 
-                      value={tradingStats.longestLossStreak.toString()}
-                      className="text-red-500"
-                    />
-                    <StatItem 
-                      label="Active Hours/Day" 
-                      value={tradingStats.activeHoursPerDay.toString()}
-                    />
-                    <StatItem 
-                      label="Avg. Hold Time" 
-                      value="2.4 days"
-                    />
+                    <Button variant="outline" size="sm">Update</Button>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium">Two-Factor Authentication</p>
+                      <p className="text-xs text-muted-foreground">Not enabled</p>
+                    </div>
+                    <Button variant="outline" size="sm">Enable</Button>
+                  </div>
+                </div>
+              </div>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Monthly Performance</CardTitle>
-                  <CardDescription>Your monthly returns compared to market</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                    Performance chart will be shown here
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Trading Preferences</h3>
+                <div className="p-4 bg-muted/30 rounded-lg space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium">Default Order Type</p>
+                      <p className="text-xs text-muted-foreground">Market Order</p>
+                    </div>
+                    <Button variant="outline" size="sm">Change</Button>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="settings" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Preferences</CardTitle>
-                  <CardDescription>Manage your account settings</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium">Notifications</h3>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="notifications">Push Notifications</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Receive notifications about important account events
-                        </p>
-                      </div>
-                      <Switch
-                        id="notifications"
-                        checked={settings.notifications}
-                        onCheckedChange={(checked) => handleSettingChange('notifications', checked)}
-                      />
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium">Chart Preferences</p>
+                      <p className="text-xs text-muted-foreground">Candlestick view</p>
                     </div>
-                    
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="email-alerts">Email Alerts</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Get important alerts delivered to your email
-                        </p>
-                      </div>
-                      <Switch
-                        id="email-alerts"
-                        checked={settings.emailAlerts}
-                        onCheckedChange={(checked) => handleSettingChange('emailAlerts', checked)}
-                      />
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="sms-alerts">SMS Alerts</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Receive time-sensitive alerts via SMS
-                        </p>
-                      </div>
-                      <Switch
-                        id="sms-alerts"
-                        checked={settings.smsAlerts}
-                        onCheckedChange={(checked) => handleSettingChange('smsAlerts', checked)}
-                      />
-                    </div>
+                    <Button variant="outline" size="sm">Customize</Button>
                   </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium">Security</h3>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="2fa">Two-Factor Authentication</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Add an extra layer of security to your account
-                        </p>
-                      </div>
-                      <Switch
-                        id="2fa"
-                        checked={settings.twoFactorAuth}
-                        onCheckedChange={(checked) => handleSettingChange('twoFactorAuth', checked)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium">Display</h3>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="dark-mode">Dark Mode</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Use dark theme for the application
-                        </p>
-                      </div>
-                      <Switch
-                        id="dark-mode"
-                        checked={settings.darkMode}
-                        onCheckedChange={(checked) => handleSettingChange('darkMode', checked)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium">Privacy</h3>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="public-profile">Public Profile</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Allow other users to view your profile and statistics
-                        </p>
-                      </div>
-                      <Switch
-                        id="public-profile"
-                        checked={settings.publicProfile}
-                        onCheckedChange={(checked) => handleSettingChange('publicProfile', checked)}
-                      />
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="data-sharing">Data Sharing</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Share anonymized trading data to improve our services
-                        </p>
-                      </div>
-                      <Switch
-                        id="data-sharing"
-                        checked={settings.dataSharing}
-                        onCheckedChange={(checked) => handleSettingChange('dataSharing', checked)}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface ProfileFieldProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  isEditing: boolean;
-  onChange: (value: string) => void;
-}
-
-function ProfileField({ icon, label, value, isEditing, onChange }: ProfileFieldProps) {
-  return (
-    <div>
-      <label className="text-sm font-medium flex items-center gap-2">
-        {icon} {label}
-      </label>
-      {isEditing ? (
-        <Input 
-          className="mt-1"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      ) : (
-        <p className="text-sm mt-1">{value}</p>
-      )}
-    </div>
-  );
-}
-
-interface StatItemProps {
-  label: string;
-  value: string;
-  className?: string;
-}
-
-function StatItem({ label, value, className = "" }: StatItemProps) {
-  return (
-    <div className="p-4 border rounded-md bg-card">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold ${className}`}>{value}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -4,12 +4,11 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PortfolioOverview } from '@/components/dashboard/PortfolioOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpRight, ArrowDownRight, BarChart3, DollarSign, PieChart } from 'lucide-react';
-import { useTrading } from '@/contexts/TradingContext';
+import { useAppSelector } from '@/store/hooks';
 import { formatCurrency, formatPercentage, getColorForChange } from '@/lib/utils';
 
 export default function PortfolioPage() {
-  const { state } = useTrading();
-  const { cash, holdings, stockData } = state;
+  const { cash, holdings, stockData } = useAppSelector(state => state.trading);
   
   // Calculate portfolio value
   const portfolioValue = holdings.reduce((total, holding) => {
