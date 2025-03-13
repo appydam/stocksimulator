@@ -1,6 +1,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { TradingProvider } from "./contexts/TradingContext";
+import { Provider } from "react-redux";
+import { store } from "./store";
 import Index from "./pages/Index";
 import MarketPage from "./pages/Market";
 import WatchlistPage from "./pages/Watchlist";
@@ -11,12 +12,14 @@ import SettingsPage from "./pages/Settings";
 import HelpPage from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "./components/ui/toaster";
+import { ReduxUpdater } from "./components/ReduxUpdater";
 import "./App.css";
 
 function App() {
   return (
-    <TradingProvider>
+    <Provider store={store}>
       <Router>
+        <ReduxUpdater />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/market" element={<MarketPage />} />
@@ -30,7 +33,7 @@ function App() {
         </Routes>
         <Toaster />
       </Router>
-    </TradingProvider>
+    </Provider>
   );
 }
 

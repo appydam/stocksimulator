@@ -1,25 +1,47 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, HelpCircle, User, Moon, Sun, Search } from 'lucide-react';
-import { useTrading } from '@/contexts/TradingContext';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { updateSettings } from '@/store/userSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrency } from '@/lib/utils';
 
 export function Navbar() {
-  const { state } = useTrading();
-  const { marketOpen, cash } = state;
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { marketOpen, cash } = useAppSelector(state => state.trading);
+  const { settings } = useAppSelector(state => state.user);
+  const [isDarkMode, setIsDarkMode] = useState(settings.darkMode);
+
+  useEffect(() => {
+    // Apply dark mode from Redux state on component mount
+    if (settings.darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [settings.darkMode]);
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    
+    // Update Redux state
+    dispatch(updateSettings({ darkMode: newDarkMode }));
+    
     // Toggle dark mode class on document
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-    } else {
+    if (newDarkMode) {
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
   };
 
   return (
@@ -68,7 +90,8 @@ export function Navbar() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 rounded-full border"
+            className="h-8 w-8 rounded-full border cursor-pointer"
+            onClick={handleProfileClick}
           >
             <User className="h-4 w-4" />
           </Button>

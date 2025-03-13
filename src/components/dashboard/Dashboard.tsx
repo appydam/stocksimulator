@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowUpRight, ArrowDownRight, TrendingUp, BarChart3, DollarSign, PieChart } from 'lucide-react';
-import { useTrading } from '@/contexts/TradingContext';
+import { useAppSelector } from '@/store/hooks';
 import { formatCurrency, formatPercentage, getColorForChange } from '@/lib/utils';
 import { MarketOverview } from './MarketOverview';
 import { WatchlistOverview } from './WatchlistOverview';
@@ -10,8 +11,7 @@ import { PortfolioOverview } from './PortfolioOverview';
 import { Leaderboard } from './Leaderboard';
 
 export function Dashboard() {
-  const { state } = useTrading();
-  const { cash, holdings, stockData } = state;
+  const { cash, holdings, stockData } = useAppSelector(state => state.trading);
   
   const portfolioValue = holdings.reduce((total, holding) => {
     const stock = stockData.find(s => s.id === holding.stockId);

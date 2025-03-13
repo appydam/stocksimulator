@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowUpRight, ArrowDownRight, Star, TrendingUp, BarChart3 } from 'lucide-react';
 import { Stock } from '@/data/stocks';
 import { formatCurrency, formatPercentage, getColorForChange } from '@/lib/utils';
-import { useTrading } from '@/contexts/TradingContext';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { addToWatchlist, removeFromWatchlist } from '@/store/tradingSlice';
 
 interface StockCardProps {
   stock: Stock;
@@ -14,15 +15,16 @@ interface StockCardProps {
 }
 
 export function StockCard({ stock, onSelect, showActions = true }: StockCardProps) {
-  const { state, addToWatchlist, removeFromWatchlist } = useTrading();
-  const isInWatchlist = state.watchlist.some(item => item.stockId === stock.id);
+  const dispatch = useAppDispatch();
+  const { watchlist } = useAppSelector(state => state.trading);
+  const isInWatchlist = watchlist.some(item => item.stockId === stock.id);
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isInWatchlist) {
-      removeFromWatchlist(stock.id);
+      dispatch(removeFromWatchlist(stock.id));
     } else {
-      addToWatchlist(stock.id);
+      dispatch(addToWatchlist(stock.id));
     }
   };
 

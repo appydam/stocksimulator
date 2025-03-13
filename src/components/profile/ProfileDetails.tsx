@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { useTrading } from '@/contexts/TradingContext';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { updateProfile, updateSettings } from '@/store/userSlice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,17 +19,18 @@ import {
 import { formatCurrency, formatPercentage, getColorForChange, formatDateTime } from '@/lib/utils';
 
 export function ProfileDetails() {
-  const { state } = useTrading();
-  const { cash, holdings, stockData, transactions } = state;
+  const dispatch = useAppDispatch();
+  const { profile, settings, accountInfo } = useAppSelector(state => state.user);
+  const { cash, holdings, stockData, transactions } = useAppSelector(state => state.trading);
 
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: 'Rahul Sharma',
-    email: 'rahul.sharma@example.com',
-    phone: '+91 98765 43210',
-    address: 'Mumbai, Maharashtra',
-    occupation: 'Software Engineer',
-    bio: 'Passionate investor focused on long-term growth and value investing strategies.'
+    name: profile.name,
+    email: profile.email,
+    phone: profile.phone,
+    address: profile.address,
+    occupation: profile.occupation,
+    bio: profile.bio
   });
 
   // Calculate portfolio stats
@@ -63,29 +65,13 @@ export function ProfileDetails() {
     activeHoursPerDay: 3.5,
   };
 
-  // Mock account settings
-  const [settings, setSettings] = useState({
-    notifications: true,
-    twoFactorAuth: false,
-    darkMode: false,
-    emailAlerts: true,
-    smsAlerts: false,
-    autoRenew: true,
-    publicProfile: false,
-    dataSharing: true
-  });
-
   const handleProfileSave = () => {
     setIsEditing(false);
-    // Would save data to backend here
+    dispatch(updateProfile(profileData));
   };
 
   const handleSettingChange = (key: string, value: boolean) => {
-    setSettings({
-      ...settings,
-      [key]: value
-    });
-    // Would save settings to backend here
+    dispatch(updateSettings({ [key]: value }));
   };
 
   return (
@@ -113,8 +99,8 @@ export function ProfileDetails() {
             <CardContent className="space-y-4">
               <div className="flex justify-center mb-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src="https://github.com/shadcn.png" alt="Profile" />
-                  <AvatarFallback className="text-2xl">{profileData.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <AvatarImage src={profile.avatarUrl} alt="Profile" />
+                  <AvatarFallback className="text-2xl">{profile.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                 </Avatar>
               </div>
               
@@ -187,7 +173,7 @@ export function ProfileDetails() {
                   <Shield className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Account Status</span>
                 </div>
-                <span className="text-sm font-medium text-green-500">Active</span>
+                <span className="text-sm font-medium text-green-500">{accountInfo.status}</span>
               </div>
               
               <div className="flex justify-between items-center">
@@ -195,7 +181,7 @@ export function ProfileDetails() {
                   <CreditCard className="h-4 w-4" />
                   <span className="text-sm">Subscription</span>
                 </div>
-                <span className="text-sm font-medium">Premium Plan</span>
+                <span className="text-sm font-medium">{accountInfo.subscription}</span>
               </div>
               
               <div className="flex justify-between items-center">
@@ -203,7 +189,7 @@ export function ProfileDetails() {
                   <Calendar className="h-4 w-4" />
                   <span className="text-sm">Member Since</span>
                 </div>
-                <span className="text-sm font-medium">Mar 2023</span>
+                <span className="text-sm font-medium">{accountInfo.memberSince}</span>
               </div>
               
               <div className="flex justify-between items-center">
@@ -211,7 +197,7 @@ export function ProfileDetails() {
                   <Clock className="h-4 w-4" />
                   <span className="text-sm">Last Login</span>
                 </div>
-                <span className="text-sm font-medium">Today, 10:45 AM</span>
+                <span className="text-sm font-medium">{accountInfo.lastLogin}</span>
               </div>
               
               <div className="flex justify-between items-center">
@@ -219,7 +205,7 @@ export function ProfileDetails() {
                   <Globe className="h-4 w-4" />
                   <span className="text-sm">Login Location</span>
                 </div>
-                <span className="text-sm font-medium">Mumbai, IN</span>
+                <span className="text-sm font-medium">{accountInfo.loginLocation}</span>
               </div>
             </CardContent>
           </Card>

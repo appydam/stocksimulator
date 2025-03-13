@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Stock } from '@/data/stocks';
-import { useTrading } from '@/contexts/TradingContext';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { placeOrder } from '@/store/tradingSlice';
 import { formatCurrency } from '@/lib/utils';
 
 interface OrderFormProps {
@@ -21,27 +22,29 @@ type OrderFormData = {
 };
 
 export function OrderForm({ stock, onComplete }: OrderFormProps) {
+  const dispatch = useAppDispatch();
+  const { cash, holdings, marketOpen } = useAppSelector(state => state.trading);
+  
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const buyForm = useForm<OrderFormData>();
   const sellForm = useForm<OrderFormData>();
-  const { state, placeOrder } = useTrading();
   
   // Get current holding for this stock if any
-  const holding = state.holdings.find(h => h.stockId === stock.id);
+  const holding = holdings.find(h => h.stockId === stock.id);
   const holdingQuantity = holding ? holding.quantity : 0;
   
   const handleBuySubmit = buyForm.handleSubmit((data) => {
     const quantity = parseInt(data.quantity);
     if (isNaN(quantity) || quantity <= 0) return;
     
-    placeOrder({
+    dispatch(placeOrder({
       type: 'BUY',
       orderType,
       stockId: stock.id,
       stockSymbol: stock.symbol,
       quantity,
       limitPrice: orderType === 'LIMIT' ? parseFloat(data.limitPrice || '0') : undefined,
-    });
+    }));
     
     onComplete();
   });
@@ -50,14 +53,14 @@ export function OrderForm({ stock, onComplete }: OrderFormProps) {
     const quantity = parseInt(data.quantity);
     if (isNaN(quantity) || quantity <= 0 || quantity > holdingQuantity) return;
     
-    placeOrder({
+    dispatch(placeOrder({
       type: 'SELL',
       orderType,
       stockId: stock.id,
       stockSymbol: stock.symbol,
       quantity,
       limitPrice: orderType === 'LIMIT' ? parseFloat(data.limitPrice || '0') : undefined,
-    });
+    }));
     
     onComplete();
   });
@@ -133,7 +136,7 @@ export function OrderForm({ stock, onComplete }: OrderFormProps) {
             </div>
             <div className="flex justify-between py-2 border-t">
               <span>Available Cash:</span>
-              <span>{formatCurrency(state.cash)}</span>
+              <span>{formatCurrency(cash)}</span>
             </div>
           </div>
           
@@ -141,19 +144,19 @@ export function OrderForm({ stock, onComplete }: OrderFormProps) {
             type="submit" 
             className="w-full" 
             disabled={
-              !state.marketOpen && orderType === 'MARKET' || 
-              estimatedBuyCost > state.cash
+              !marketOpen && orderType === 'MARKET' || 
+              estimatedBuyCost > cash
             }
           >
             Place Buy Order
           </Button>
           
-          {!state.marketOpen && orderType === 'MARKET' && (
+          {!marketOpen && orderType === 'MARKET' && (
             <p className="text-xs text-destructive text-center">
               Market orders can only be placed when the market is open.
             </p>
           )}
-          {estimatedBuyCost > state.cash && (
+          {estimatedBuyCost > cash && (
             <p className="text-xs text-destructive text-center">
               Insufficient funds for this order.
             </p>
@@ -227,7 +230,7 @@ export function OrderForm({ stock, onComplete }: OrderFormProps) {
             type="submit" 
             className="w-full" 
             disabled={
-              !state.marketOpen && orderType === 'MARKET' ||
+              !marketOpen && orderType === 'MARKET' ||
               holdingQuantity === 0 ||
               (sellForm.watch('quantity') && parseInt(sellForm.watch('quantity')) > holdingQuantity)
             }
@@ -235,7 +238,7 @@ export function OrderForm({ stock, onComplete }: OrderFormProps) {
             Place Sell Order
           </Button>
           
-          {!state.marketOpen && orderType === 'MARKET' && (
+          {!marketOpen && orderType === 'MARKET' && (
             <p className="text-xs text-destructive text-center">
               Market orders can only be placed when the market is open.
             </p>
