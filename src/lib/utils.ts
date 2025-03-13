@@ -1,3 +1,4 @@
+
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -51,8 +52,8 @@ export function getDate(): string {
   });
 }
 
-export function formatDateTime(timestamp: number): string {
-  const date = new Date(timestamp);
+export function formatDateTime(timestamp: number | Date): string {
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
   return date.toLocaleString('en-IN', {
     day: '2-digit',
     month: 'short',

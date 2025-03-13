@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { updateProfile, updateSettings } from '@/store/userSlice';
