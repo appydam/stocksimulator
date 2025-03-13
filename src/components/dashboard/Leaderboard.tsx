@@ -23,7 +23,7 @@ export function Leaderboard() {
   const currentUserRank = Math.floor(Math.random() * 10) + 1;
   
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center">
           <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
@@ -31,7 +31,7 @@ export function Leaderboard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative overflow-x-auto">
+        <div className="relative">
           <table className="w-full text-sm text-left">
             <thead className="text-xs uppercase bg-muted/50">
               <tr>

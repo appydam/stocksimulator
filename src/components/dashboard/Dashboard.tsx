@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,26 +13,21 @@ export function Dashboard() {
   const { state } = useTrading();
   const { cash, holdings, stockData } = state;
   
-  // Calculate portfolio value
   const portfolioValue = holdings.reduce((total, holding) => {
     const stock = stockData.find(s => s.id === holding.stockId);
     return total + (stock ? stock.currentPrice * holding.quantity : 0);
   }, 0);
   
-  // Calculate total account value
   const totalValue = cash + portfolioValue;
   
-  // Calculate invested amount
   const investedAmount = holdings.reduce((total, holding) => total + holding.investedAmount, 0);
   
-  // Calculate unrealized P&L
   const unrealizedPnL = holdings.reduce((total, holding) => {
     const stock = stockData.find(s => s.id === holding.stockId);
     const currentValue = stock ? stock.currentPrice * holding.quantity : 0;
     return total + (currentValue - holding.investedAmount);
   }, 0);
   
-  // Calculate P&L percentage
   const pnlPercentage = investedAmount > 0 ? (unrealizedPnL / investedAmount) * 100 : 0;
 
   return (
@@ -103,8 +97,8 @@ export function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-4">
-        <div className="col-span-1 lg:col-span-3">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+        <div className="col-span-1 lg:col-span-2">
           <Tabs defaultValue="market" className="space-y-4">
             <TabsList>
               <TabsTrigger value="market">Market Overview</TabsTrigger>

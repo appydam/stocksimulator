@@ -6,6 +6,7 @@ import MarketPage from "./pages/Market";
 import WatchlistPage from "./pages/Watchlist";
 import OrdersPage from "./pages/Orders";
 import PortfolioPage from "./pages/Portfolio";
+import ProfilePage from "./pages/Profile";
 import SettingsPage from "./pages/Settings";
 import HelpPage from "./pages/Help";
 import NotFound from "./pages/NotFound";
@@ -22,6 +23,7 @@ function App() {
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="*" element={<NotFound />} />
