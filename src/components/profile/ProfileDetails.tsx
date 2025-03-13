@@ -3,7 +3,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { updateProfile, updateSettings } from '@/store/userSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatCurrency, formatPercentage, formatNumber, getColorForChange } from '@/lib/utils';
+import { formatCurrency, formatPercentage, formatNumber, getColorForChange, formatDateTime } from '@/lib/utils';
 import { ArrowUpRight, ArrowDownRight, User, Mail, Phone, MapPin, Calendar, Settings, History, PieChart, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,17 +39,6 @@ export function ProfileDetails() {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    });
-  };
-
-  const formatDateTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
     });
   };
 
