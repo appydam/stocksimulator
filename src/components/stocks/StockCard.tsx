@@ -88,8 +88,8 @@ export function StockCard({ stock, onSelect, showActions = true }: StockCardProp
               <span>Vol: {(stock.volume / 1000).toFixed(1)}K</span>
             </div>
             <div>
-              <span className="mr-2">H: {formatCurrency(stock.high)}</span>
-              <span>L: {formatCurrency(stock.low)}</span>
+              <span className="mr-2">H: {formatCurrency(stock.dayHigh)}</span>
+              <span>L: {formatCurrency(stock.dayLow)}</span>
             </div>
           </div>
         </div>

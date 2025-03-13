@@ -313,13 +313,13 @@ export function ProfileDetails() {
                             return (
                               <tr key={index} className="border-b hover:bg-muted/50">
                                 <td className="px-4 py-3 font-medium">{stock?.symbol}</td>
-                                <td className={`px-4 py-3 ${transaction.type === 'buy' ? 'text-green-500' : 'text-red-500'}`}>
-                                  {transaction.type.toUpperCase()}
+                                <td className={`px-4 py-3 ${transaction.type === 'BUY' ? 'text-green-500' : 'text-red-500'}`}>
+                                  {transaction.type}
                                 </td>
                                 <td className="px-4 py-3">{transaction.quantity}</td>
                                 <td className="px-4 py-3">{formatCurrency(transaction.price)}</td>
                                 <td className="px-4 py-3">{formatCurrency(transaction.price * transaction.quantity)}</td>
-                                <td className="px-4 py-3">{formatDateTime(transaction.timestamp)}</td>
+                                <td className="px-4 py-3">{formatDateTime(transaction.timestamp.getTime())}</td>
                               </tr>
                             );
                           })}
