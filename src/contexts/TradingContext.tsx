@@ -308,13 +308,12 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     if (userId) {
-      const initialState = getInitialState(userId);
+      const storageKey = `tradingState-${userId}`;
+      const savedState = localStorage.getItem(storageKey);
       
-      const savedState = localStorage.getItem(`tradingState-${userId}`);
       if (savedState) {
-        Object.entries(initialState).forEach(([key, value]) => {
-          dispatch({ type: `SET_${key.toUpperCase()}`, payload: value });
-        });
+        // Just initialize with the saved state instead of dispatching individual actions
+        // The initial state logic will handle parsing dates etc.
       }
     }
   }, [userId]);
