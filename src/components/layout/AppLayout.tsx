@@ -10,7 +10,12 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
+
+  // Wait for Clerk to load before redirecting
+  if (!isLoaded) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
 
   // Redirect to sign-in if user is not authenticated
   if (!isSignedIn) {

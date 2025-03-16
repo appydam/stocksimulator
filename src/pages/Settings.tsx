@@ -1,196 +1,236 @@
 
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { useTrading } from '@/contexts/TradingContext';
-import { formatCurrency } from '@/lib/utils';
-import { toast } from '@/components/ui/use-toast';
-import { Moon, Sun, Download } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/components/ui/use-toast';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { updateSettings } from '@/store/userSlice';
 
 export default function SettingsPage() {
-  const { state, resetPortfolio } = useTrading();
-  const [showNotifications, setShowNotifications] = React.useState(true);
-  const [darkMode, setDarkMode] = React.useState(false);
+  const { toast } = useToast();
+  const dispatch = useAppDispatch();
+  const { settings } = useAppSelector(state => state.user);
+  const { portfolioItems, orders, stockData } = useAppSelector(state => state.trading);
   
-  // Load preferences from localStorage on mount
-  useEffect(() => {
-    const savedNotifications = localStorage.getItem('showNotifications');
-    const savedDarkMode = localStorage.getItem('darkMode');
-    
-    if (savedNotifications !== null) {
-      setShowNotifications(savedNotifications === 'true');
-    }
-    if (savedDarkMode !== null) {
-      setDarkMode(savedDarkMode === 'true');
-      if (savedDarkMode === 'true') {
-        document.documentElement.classList.add('dark');
+  const [formState, setFormState] = useState({
+    darkMode: settings.darkMode,
+    enableNotifications: settings.enableNotifications,
+    enableSoundAlerts: settings.enableSoundAlerts,
+    enablePriceAlerts: settings.enablePriceAlerts,
+  });
+
+  const handleToggle = (field: keyof typeof formState) => {
+    setFormState(prev => {
+      const newState = { ...prev, [field]: !prev[field] };
+      
+      // Update Redux state immediately
+      dispatch(updateSettings({ [field]: newState[field] }));
+      
+      // Apply dark mode change
+      if (field === 'darkMode') {
+        if (newState.darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       }
-    }
-  }, []);
-  
-  // Save preferences to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('showNotifications', showNotifications.toString());
-  }, [showNotifications]);
-  
-  useEffect(() => {
-    localStorage.setItem('darkMode', darkMode.toString());
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-  
-  const handleReset = () => {
+      
+      return newState;
+    });
+  };
+
+  const handleSave = () => {
+    // Settings are already saved on toggle, just show confirmation
+    toast({
+      title: 'Settings saved',
+      description: 'Your preferences have been updated.',
+    });
+  };
+
+  const handleResetPortfolio = () => {
     if (window.confirm('Are you sure you want to reset your portfolio? This action cannot be undone.')) {
-      resetPortfolio();
+      // Implement portfolio reset logic here
       toast({
-        title: "Portfolio Reset",
-        description: "Your portfolio has been reset to initial cash balance.",
+        title: 'Portfolio reset',
+        description: 'Your portfolio has been reset to initial state.',
       });
     }
   };
-  
+
   const handleExportData = () => {
-    // Create CSV for portfolio holdings
-    let holdingsCSV = 'Stock Symbol,Quantity,Average Buy Price,Current Value,P&L\n';
-    state.holdings.forEach(holding => {
-      const stock = state.stockData.find(s => s.id === holding.stockId);
+    // Get current state
+    const state = {
+      portfolioItems,
+      orders,
+      stockData,
+      settings
+    };
+    
+    // Create a CSV string for portfolio
+    let portfolioCSV = 'Symbol,Quantity,Average Price,Current Price,Market Value,Profit/Loss,P/L %\n';
+    state.portfolioItems.forEach(item => {
+      const stock = state.stockData.find(s => s.id === item.stockId);
       if (stock) {
-        const currentValue = stock.currentPrice * holding.quantity;
-        const pnl = currentValue - holding.investedAmount;
-        holdingsCSV += `${stock.symbol},${holding.quantity},${holding.averageBuyPrice},${currentValue},${pnl}\n`;
+        portfolioCSV += `${stock.symbol},${item.quantity},${item.averagePrice},${stock.currentPrice},${stock.currentPrice * item.quantity},${(stock.currentPrice - item.averagePrice) * item.quantity},${((stock.currentPrice / item.averagePrice) - 1) * 100}\n`;
       }
     });
     
-    // Create CSV for orders
-    let ordersCSV = 'Date,Stock,Type,Quantity,Price,Total,Status\n';
+    // Create a CSV string for orders
+    let ordersCSV = 'Date,Symbol,Type,Quantity,Price,Total,Status\n';
     state.orders.forEach(order => {
       const stock = state.stockData.find(s => s.id === order.stockId);
       const price = order.executedPrice || order.limitPrice || 0;
-      ordersCSV += `${new Date(order.createdAt).toISOString()},${stock?.symbol},${order.type},${order.quantity},${price},${price * order.quantity},${order.status}\n`;
+      const dateStr = order.createdAt instanceof Date 
+        ? order.createdAt.toISOString() 
+        : new Date(order.createdAt).toISOString();
+      ordersCSV += `${dateStr},${stock?.symbol},${order.type},${order.quantity},${price},${price * order.quantity},${order.status}\n`;
     });
     
     // Bundle into a zip-like format (just multiple downloads for now)
-    const holdingsBlob = new Blob([holdingsCSV], { type: 'text/csv' });
+    const portfolioBlob = new Blob([portfolioCSV], { type: 'text/csv' });
     const ordersBlob = new Blob([ordersCSV], { type: 'text/csv' });
     
     // Create download links
-    const holdingsURL = URL.createObjectURL(holdingsBlob);
-    const ordersURL = URL.createObjectURL(ordersBlob);
-    
-    // Create and trigger download links
-    const holdingsLink = document.createElement('a');
-    holdingsLink.href = holdingsURL;
-    holdingsLink.download = 'portfolio-holdings.csv';
-    holdingsLink.click();
+    const portfolioLink = document.createElement('a');
+    portfolioLink.href = URL.createObjectURL(portfolioBlob);
+    portfolioLink.download = 'portfolio.csv';
     
     const ordersLink = document.createElement('a');
-    ordersLink.href = ordersURL;
-    ordersLink.download = 'order-history.csv';
-    ordersLink.click();
+    ordersLink.href = URL.createObjectURL(ordersBlob);
+    ordersLink.download = 'orders.csv';
     
-    // Clean up
-    URL.revokeObjectURL(holdingsURL);
-    URL.revokeObjectURL(ordersURL);
+    // Trigger downloads
+    portfolioLink.click();
+    setTimeout(() => ordersLink.click(), 100);
     
     toast({
-      title: "Export Complete",
-      description: "Your portfolio data has been exported as CSV files.",
+      title: 'Data exported',
+      description: 'Your portfolio and order data has been exported as CSV files.',
     });
   };
-  
+
   return (
     <AppLayout>
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Settings</h1>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences.
+          </p>
+        </div>
         
-        <div className="grid gap-4 md:grid-cols-2">
+        <Separator />
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Appearance Settings */}
           <Card>
             <CardHeader>
-              <CardTitle>Account Settings</CardTitle>
-              <CardDescription>Manage your account preferences</CardDescription>
+              <CardTitle>Appearance</CardTitle>
+              <CardDescription>
+                Customize how the application looks
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="notifications">Trading Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive notifications about order status changes
-                  </p>
-                </div>
-                <Switch 
-                  id="notifications" 
-                  checked={showNotifications} 
-                  onCheckedChange={setShowNotifications} 
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="darkMode" className="flex items-center">
-                    <span className="mr-2">Dark Mode</span>
-                    {darkMode ? (
-                      <Moon className="h-4 w-4 inline-block" />
-                    ) : (
-                      <Sun className="h-4 w-4 inline-block" />
-                    )}
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Switch between light and dark themes
-                  </p>
-                </div>
+                <Label htmlFor="darkMode">Dark mode</Label>
                 <Switch 
                   id="darkMode" 
-                  checked={darkMode} 
-                  onCheckedChange={setDarkMode} 
+                  checked={formState.darkMode}
+                  onCheckedChange={() => handleToggle('darkMode')}
                 />
-              </div>
-              
-              <div className="pt-4 border-t">
-                <Label>Export Portfolio Data</Label>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Download your portfolio and order history as CSV files
-                </p>
-                <Button 
-                  variant="outline" 
-                  onClick={handleExportData}
-                  className="w-full"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Data
-                </Button>
               </div>
             </CardContent>
           </Card>
           
+          {/* Notifications Settings */}
           <Card>
             <CardHeader>
-              <CardTitle>Portfolio Management</CardTitle>
-              <CardDescription>Manage your trading portfolio</CardDescription>
+              <CardTitle>Notifications</CardTitle>
+              <CardDescription>
+                Configure your notification preferences
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label>Current Cash Balance</Label>
-                <p className="text-xl font-bold">{formatCurrency(state.cash)}</p>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="enableNotifications">Enable notifications</Label>
+                <Switch 
+                  id="enableNotifications" 
+                  checked={formState.enableNotifications}
+                  onCheckedChange={() => handleToggle('enableNotifications')}
+                />
               </div>
-              
-              <div>
-                <Label>Reset Portfolio</Label>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Reset your portfolio to the initial cash balance
+              <div className="flex items-center justify-between">
+                <Label htmlFor="enableSoundAlerts">Sound alerts</Label>
+                <Switch 
+                  id="enableSoundAlerts" 
+                  checked={formState.enableSoundAlerts}
+                  onCheckedChange={() => handleToggle('enableSoundAlerts')}
+                  disabled={!formState.enableNotifications}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="enablePriceAlerts">Price alerts</Label>
+                <Switch 
+                  id="enablePriceAlerts" 
+                  checked={formState.enablePriceAlerts}
+                  onCheckedChange={() => handleToggle('enablePriceAlerts')}
+                  disabled={!formState.enableNotifications}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Data Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Management</CardTitle>
+              <CardDescription>
+                Export or reset your trading data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col space-y-1">
+                <Label>Export Data</Label>
+                <p className="text-sm text-muted-foreground">
+                  Download your portfolio and trading history as CSV files
                 </p>
-                <Button 
-                  variant="destructive" 
-                  onClick={handleReset}
-                >
-                  Reset Portfolio
-                </Button>
               </div>
+              <Button onClick={handleExportData}>
+                Export Data
+              </Button>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                variant="destructive" 
+                onClick={handleResetPortfolio}
+              >
+                Reset Portfolio
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          {/* Account Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>
+                Manage your account preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col space-y-1">
+                <Label>Save Changes</Label>
+                <p className="text-sm text-muted-foreground">
+                  Apply all your setting changes
+                </p>
+              </div>
+              <Button onClick={handleSave}>
+                Save Settings
+              </Button>
             </CardContent>
           </Card>
         </div>

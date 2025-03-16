@@ -12,8 +12,8 @@ export default function OrdersPage() {
   const { orders, stockData } = useAppSelector(state => state.trading);
   const dispatch = useAppDispatch();
 
-  const formatDateTime = (date: Date | number) => {
-    return new Date(date).toLocaleString('en-IN', {
+  const formatDateTime = (date: Date | number | string) => {
+    return new Date(date).toLocaleString('en-US', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',

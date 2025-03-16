@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 import { 
   LayoutDashboard, 
@@ -17,13 +17,30 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/components/ui/use-toast';
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { signOut } = useClerk();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account",
+      });
+      navigate('/sign-in');
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Sign out failed",
+        description: "There was a problem signing out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -56,7 +73,7 @@ export function Sidebar() {
       <div className="p-4 border-t">
         <Button 
           variant="ghost" 
-          className={`w-full justify-${collapsed ? 'center' : 'start'}`}
+          className={`w-full ${collapsed ? 'justify-center' : 'justify-start'}`}
           onClick={handleSignOut}
         >
           <LogOut className="h-4 w-4 mr-2" />
