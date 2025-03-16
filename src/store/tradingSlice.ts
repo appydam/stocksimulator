@@ -1,4 +1,3 @@
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { stocks, Stock } from '../data/stocks';
 import { toast } from '@/components/ui/use-toast';
@@ -240,6 +239,16 @@ export const tradingSlice = createSlice({
       state.orders = state.orders
         .filter(order => order.status !== 'PENDING')
         .map(order => ({ ...order, status: 'CANCELED' }));
+    },
+    setUserTradingState: (state, action: PayloadAction<Partial<TradingState>>) => {
+      const userData = action.payload;
+      
+      // Update state properties with user data
+      if (userData.cash !== undefined) state.cash = userData.cash;
+      if (userData.holdings !== undefined) state.holdings = userData.holdings;
+      if (userData.watchlist !== undefined) state.watchlist = userData.watchlist;
+      if (userData.transactions !== undefined) state.transactions = userData.transactions;
+      if (userData.orders !== undefined) state.orders = userData.orders;
     }
   }
 });
@@ -252,7 +261,8 @@ export const {
   removeFromWatchlist, 
   updateStockPrices, 
   setMarketStatus, 
-  resetPortfolio 
+  resetPortfolio,
+  setUserTradingState
 } = tradingSlice.actions;
 
 export default tradingSlice.reducer;
