@@ -1,5 +1,5 @@
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { useAuth } from '@clerk/clerk-react';
 import { stocks, Stock } from '../data/stocks';
 import { toast } from '@/components/ui/use-toast';
 
@@ -74,12 +74,11 @@ interface TradingContextType {
 const TradingContext = createContext<TradingContextType | undefined>(undefined);
 
 // Initial state from localStorage or default values
-const getInitialState = (userId?: string | null): TradingState => {
-  const storageKey = userId ? `tradingState-${userId}` : 'tradingState';
-  const savedState = localStorage.getItem(storageKey);
-
+const getInitialState = (): TradingState => {
+  const savedState = localStorage.getItem('tradingState');
   if (savedState) {
     const parsed = JSON.parse(savedState);
+    // Convert date strings back to Date objects
     return {
       ...parsed,
       orders: parsed.orders.map((order: any) => ({
@@ -93,7 +92,6 @@ const getInitialState = (userId?: string | null): TradingState => {
       })),
     };
   }
-  
   return {
     cash: 1000000, // ₹10,00,000
     holdings: [],
@@ -133,6 +131,7 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
       const executedPrice = action.executedPrice;
       const total = order.quantity * executedPrice;
       
+      // Create new transaction
       const transaction: Transaction = {
         id: `txn-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         type: order.type,
@@ -144,15 +143,19 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
         total: total,
       };
 
+      // Update cash, holdings, and orders
       let newCash = state.cash;
       let newHoldings = [...state.holdings];
 
       if (order.type === 'BUY') {
+        // Deduct cash
         newCash -= total;
         
+        // Update holdings
         const existingHoldingIndex = newHoldings.findIndex(h => h.stockId === order.stockId);
         
         if (existingHoldingIndex >= 0) {
+          // Update existing holding
           const existingHolding = newHoldings[existingHoldingIndex];
           const totalShares = existingHolding.quantity + order.quantity;
           const totalInvestment = existingHolding.investedAmount + total;
@@ -164,6 +167,7 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
             investedAmount: totalInvestment,
           };
         } else {
+          // Add new holding
           newHoldings.push({
             stockId: order.stockId,
             stockSymbol: order.stockSymbol,
@@ -173,8 +177,10 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
           });
         }
       } else if (order.type === 'SELL') {
+        // Add cash
         newCash += total;
         
+        // Update holdings
         const existingHoldingIndex = newHoldings.findIndex(h => h.stockId === order.stockId);
         
         if (existingHoldingIndex >= 0) {
@@ -182,19 +188,23 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
           const remainingShares = existingHolding.quantity - order.quantity;
           
           if (remainingShares > 0) {
+            // Reduce holding
             const remainingInvestment = existingHolding.investedAmount * (remainingShares / existingHolding.quantity);
             
             newHoldings[existingHoldingIndex] = {
               ...existingHolding,
               quantity: remainingShares,
               investedAmount: remainingInvestment,
+              // Average buy price stays the same
             };
           } else {
+            // Remove holding completely
             newHoldings = newHoldings.filter(h => h.stockId !== order.stockId);
           }
         }
       }
 
+      // Update the order status
       const updatedOrders = [...state.orders];
       updatedOrders[orderIndex] = {
         ...order,
@@ -224,6 +234,7 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
     }
 
     case 'ADD_TO_WATCHLIST': {
+      // Check if already in watchlist
       if (state.watchlist.some(item => item.stockId === action.stockId)) {
         return state;
       }
@@ -245,10 +256,13 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
     }
 
     case 'UPDATE_STOCK_PRICES': {
+      // Simulate price movements
       const updatedStocks = state.stockData.map(stock => {
+        // Random price change between -1.5% and +1.5%
         const changePercent = (Math.random() * 3 - 1.5) / 100;
         const newPrice = parseFloat((stock.currentPrice * (1 + changePercent)).toFixed(2));
         
+        // Ensure price doesn't go below 0
         const finalPrice = Math.max(newPrice, 0.01);
         
         const change = finalPrice - stock.previousClose;
@@ -270,6 +284,7 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
       };
     }
 
+    // Override SET_MARKET_STATUS to always return true
     case 'SET_MARKET_STATUS': {
       return {
         ...state,
@@ -295,29 +310,14 @@ function tradingReducer(state: TradingState, action: TradingAction): TradingStat
 
 // Provider component
 export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userId, isSignedIn } = useAuth();
-  const [state, dispatch] = useReducer(tradingReducer, getInitialState(userId));
+  const [state, dispatch] = useReducer(tradingReducer, getInitialState());
 
+  // Save state to localStorage whenever it changes
   useEffect(() => {
-    if (isSignedIn && userId) {
-      localStorage.setItem(`tradingState-${userId}`, JSON.stringify(state));
-    } else {
-      localStorage.setItem('tradingState', JSON.stringify(state));
-    }
-  }, [state, userId, isSignedIn]);
+    localStorage.setItem('tradingState', JSON.stringify(state));
+  }, [state]);
 
-  useEffect(() => {
-    if (userId) {
-      const storageKey = `tradingState-${userId}`;
-      const savedState = localStorage.getItem(storageKey);
-      
-      if (savedState) {
-        // Just initialize with the saved state instead of dispatching individual actions
-        // The initial state logic will handle parsing dates etc.
-      }
-    }
-  }, [userId]);
-
+  // Process market orders immediately since market is always open
   useEffect(() => {
     state.orders.forEach(order => {
       if (order.status === 'PENDING' && order.orderType === 'MARKET') {
@@ -337,6 +337,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   }, [state.orders, state.stockData]);
 
+  // Check limit orders against current prices
   useEffect(() => {
     state.orders.forEach(order => {
       if (order.status === 'PENDING' && order.orderType === 'LIMIT' && order.limitPrice) {
@@ -361,6 +362,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   }, [state.stockData]);
 
+  // Simulate stock price updates every 3 seconds
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       dispatch({ type: 'UPDATE_STOCK_PRICES' });
@@ -371,16 +373,9 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
   }, []);
 
+  // Provider methods
   const placeOrder = (order: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to place orders",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // Validate order
     const stock = state.stockData.find(s => s.id === order.stockId);
     if (!stock) {
       toast({
@@ -391,6 +386,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return;
     }
 
+    // For sell orders, check if user has enough shares
     if (order.type === 'SELL') {
       const holding = state.holdings.find(h => h.stockId === order.stockId);
       if (!holding || holding.quantity < order.quantity) {
@@ -403,6 +399,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
 
+    // For buy orders, check if user has enough cash
     if (order.type === 'BUY') {
       const estimatedCost = order.quantity * stock.currentPrice;
       if (estimatedCost > state.cash) {
@@ -422,21 +419,13 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       description: `${order.type} ${order.quantity} ${order.stockSymbol} at ${order.orderType === 'LIMIT' ? `₹${order.limitPrice}` : 'market price'}`,
     });
 
+    // Execute immediately if it's a market order and market is open
     if (order.orderType === 'MARKET' && state.marketOpen) {
       // This will be handled by the useEffect that processes market orders
     }
   };
 
   const cancelOrder = (orderId: string) => {
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to cancel orders",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const order = state.orders.find(o => o.id === orderId);
     if (order && order.status === 'PENDING') {
       dispatch({ type: 'CANCEL_ORDER', orderId });
@@ -448,15 +437,6 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const addToWatchlist = (stockId: string) => {
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to add to watchlist",
-        variant: "destructive",
-      });
-      return;
-    }
-
     dispatch({ type: 'ADD_TO_WATCHLIST', stockId });
     const stock = state.stockData.find(s => s.id === stockId);
     if (stock) {
@@ -468,15 +448,6 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const removeFromWatchlist = (stockId: string) => {
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to modify watchlist",
-        variant: "destructive",
-      });
-      return;
-    }
-
     dispatch({ type: 'REMOVE_FROM_WATCHLIST', stockId });
     const stock = state.stockData.find(s => s.id === stockId);
     if (stock) {
@@ -488,15 +459,6 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const resetPortfolio = () => {
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to reset portfolio",
-        variant: "destructive",
-      });
-      return;
-    }
-
     dispatch({ type: 'RESET_PORTFOLIO' });
   };
 

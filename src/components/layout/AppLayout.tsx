@@ -2,26 +2,12 @@
 import React from 'react';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
-import { useAuth } from '@clerk/clerk-react';
-import { Navigate } from 'react-router-dom';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { isSignedIn, isLoaded } = useAuth();
-
-  // Wait for Clerk to load before redirecting
-  if (!isLoaded) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  }
-
-  // Redirect to sign-in if user is not authenticated
-  if (!isSignedIn) {
-    return <Navigate to="/sign-in" replace />;
-  }
-
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />

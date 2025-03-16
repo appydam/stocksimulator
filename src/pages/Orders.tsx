@@ -6,28 +6,19 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { cancelOrder } from '@/store/tradingSlice';
 import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
 
 export default function OrdersPage() {
   const { orders, stockData } = useAppSelector(state => state.trading);
   const dispatch = useAppDispatch();
 
-  const formatDateTime = (date: Date | number | string) => {
-    return new Date(date).toLocaleString('en-US', {
+  const formatDateTime = (date: Date) => {
+    return new Date(date).toLocaleString('en-IN', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
-    });
-  };
-
-  const handleCancelOrder = (orderId: string) => {
-    dispatch(cancelOrder(orderId));
-    toast({
-      title: "Order Cancelled",
-      description: "Your order has been cancelled successfully.",
     });
   };
 
@@ -110,7 +101,7 @@ export default function OrdersPage() {
                               <Button 
                                 variant="destructive" 
                                 size="sm"
-                                onClick={() => handleCancelOrder(order.id)}
+                                onClick={() => dispatch(cancelOrder(order.id))}
                               >
                                 Cancel
                               </Button>

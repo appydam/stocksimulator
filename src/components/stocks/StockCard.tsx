@@ -1,7 +1,5 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight, ArrowDownRight, Star, TrendingUp, BarChart3 } from 'lucide-react';
@@ -9,7 +7,6 @@ import { Stock } from '@/data/stocks';
 import { formatCurrency, formatPercentage, getColorForChange } from '@/lib/utils';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { addToWatchlist, removeFromWatchlist } from '@/store/tradingSlice';
-import { toast } from '@/components/ui/use-toast';
 
 interface StockCardProps {
   stock: Stock;
@@ -21,21 +18,9 @@ export function StockCard({ stock, onSelect, showActions = true }: StockCardProp
   const dispatch = useAppDispatch();
   const { watchlist } = useAppSelector(state => state.trading);
   const isInWatchlist = watchlist.some(item => item.stockId === stock.id);
-  const { isSignedIn } = useAuth();
-  const navigate = useNavigate();
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to add stocks to your watchlist",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     if (isInWatchlist) {
       dispatch(removeFromWatchlist(stock.id));
     } else {
@@ -44,42 +29,6 @@ export function StockCard({ stock, onSelect, showActions = true }: StockCardProp
   };
 
   const handleCardClick = () => {
-    if (onSelect) {
-      onSelect(stock);
-    }
-  };
-
-  const handleBuyClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to trade stocks",
-        variant: "destructive",
-      });
-      navigate('/sign-in');
-      return;
-    }
-    
-    if (onSelect) {
-      onSelect(stock);
-    }
-  };
-
-  const handleSellClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to trade stocks",
-        variant: "destructive",
-      });
-      navigate('/sign-in');
-      return;
-    }
-    
     if (onSelect) {
       onSelect(stock);
     }
@@ -128,8 +77,8 @@ export function StockCard({ stock, onSelect, showActions = true }: StockCardProp
             <div className="flex items-end justify-end">
               {showActions && (
                 <div className="flex flex-col gap-1.5 w-full">
-                  <Button size="sm" variant="default" className="w-full" onClick={handleBuyClick}>Buy</Button>
-                  <Button size="sm" variant="outline" className="w-full" onClick={handleSellClick}>Sell</Button>
+                  <Button size="sm" variant="default" className="w-full">Buy</Button>
+                  <Button size="sm" variant="outline" className="w-full">Sell</Button>
                 </div>
               )}
             </div>

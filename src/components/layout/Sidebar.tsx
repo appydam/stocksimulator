@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useClerk } from '@clerk/clerk-react';
+import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   LineChart, 
@@ -12,36 +11,13 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  User,
-  LogOut
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/components/ui/use-toast';
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { signOut } = useClerk();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Signed out successfully",
-        description: "You have been signed out of your account",
-      });
-      navigate('/sign-in');
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Sign out failed",
-        description: "There was a problem signing out. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className={`${collapsed ? 'w-14' : 'w-56'} flex h-screen flex-col border-r bg-background transition-all duration-300`}>
@@ -71,16 +47,8 @@ export function Sidebar() {
         </TooltipProvider>
       </nav>
       <div className="p-4 border-t">
-        <Button 
-          variant="ghost" 
-          className={`w-full ${collapsed ? 'justify-center' : 'justify-start'}`}
-          onClick={handleSignOut}
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          {!collapsed && <span>Sign Out</span>}
-        </Button>
         {!collapsed && (
-          <div className="text-center text-xs text-muted-foreground mt-4">
+          <div className="text-center text-xs text-muted-foreground">
             <p>TradeSimulate - Paper Trading</p>
             <p>v1.0.0</p>
           </div>
