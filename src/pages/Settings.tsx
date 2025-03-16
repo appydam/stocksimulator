@@ -14,13 +14,13 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const dispatch = useAppDispatch();
   const { settings } = useAppSelector(state => state.user);
-  const { portfolioItems, orders, stockData } = useAppSelector(state => state.trading);
+  const { holdings, orders, stockData } = useAppSelector(state => state.trading);
   
   const [formState, setFormState] = useState({
     darkMode: settings.darkMode,
-    enableNotifications: settings.enableNotifications,
-    enableSoundAlerts: settings.enableSoundAlerts,
-    enablePriceAlerts: settings.enablePriceAlerts,
+    notifications: settings.notifications,
+    emailAlerts: settings.emailAlerts,
+    smsAlerts: settings.smsAlerts,
   });
 
   const handleToggle = (field: keyof typeof formState) => {
@@ -64,7 +64,7 @@ export default function SettingsPage() {
   const handleExportData = () => {
     // Get current state
     const state = {
-      portfolioItems,
+      holdings,
       orders,
       stockData,
       settings
@@ -72,10 +72,10 @@ export default function SettingsPage() {
     
     // Create a CSV string for portfolio
     let portfolioCSV = 'Symbol,Quantity,Average Price,Current Price,Market Value,Profit/Loss,P/L %\n';
-    state.portfolioItems.forEach(item => {
+    state.holdings.forEach(item => {
       const stock = state.stockData.find(s => s.id === item.stockId);
       if (stock) {
-        portfolioCSV += `${stock.symbol},${item.quantity},${item.averagePrice},${stock.currentPrice},${stock.currentPrice * item.quantity},${(stock.currentPrice - item.averagePrice) * item.quantity},${((stock.currentPrice / item.averagePrice) - 1) * 100}\n`;
+        portfolioCSV += `${stock.symbol},${item.quantity},${item.averageBuyPrice},${stock.currentPrice},${stock.currentPrice * item.quantity},${(stock.currentPrice - item.averageBuyPrice) * item.quantity},${((stock.currentPrice / item.averageBuyPrice) - 1) * 100}\n`;
       }
     });
     
@@ -156,29 +156,29 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label htmlFor="enableNotifications">Enable notifications</Label>
+                <Label htmlFor="notifications">Enable notifications</Label>
                 <Switch 
-                  id="enableNotifications" 
-                  checked={formState.enableNotifications}
-                  onCheckedChange={() => handleToggle('enableNotifications')}
+                  id="notifications" 
+                  checked={formState.notifications}
+                  onCheckedChange={() => handleToggle('notifications')}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="enableSoundAlerts">Sound alerts</Label>
+                <Label htmlFor="emailAlerts">Email alerts</Label>
                 <Switch 
-                  id="enableSoundAlerts" 
-                  checked={formState.enableSoundAlerts}
-                  onCheckedChange={() => handleToggle('enableSoundAlerts')}
-                  disabled={!formState.enableNotifications}
+                  id="emailAlerts" 
+                  checked={formState.emailAlerts}
+                  onCheckedChange={() => handleToggle('emailAlerts')}
+                  disabled={!formState.notifications}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="enablePriceAlerts">Price alerts</Label>
+                <Label htmlFor="smsAlerts">SMS alerts</Label>
                 <Switch 
-                  id="enablePriceAlerts" 
-                  checked={formState.enablePriceAlerts}
-                  onCheckedChange={() => handleToggle('enablePriceAlerts')}
-                  disabled={!formState.enableNotifications}
+                  id="smsAlerts" 
+                  checked={formState.smsAlerts}
+                  onCheckedChange={() => handleToggle('smsAlerts')}
+                  disabled={!formState.notifications}
                 />
               </div>
             </CardContent>
