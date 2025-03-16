@@ -72,7 +72,7 @@ export default function SettingsPage() {
     state.orders.forEach(order => {
       const stock = state.stockData.find(s => s.id === order.stockId);
       const price = order.executedPrice || order.limitPrice || 0;
-      ordersCSV += `${order.createdAt.toISOString()},${stock?.symbol},${order.type},${order.quantity},${price},${price * order.quantity},${order.status}\n`;
+      ordersCSV += `${new Date(order.createdAt).toISOString()},${stock?.symbol},${order.type},${order.quantity},${price},${price * order.quantity},${order.status}\n`;
     });
     
     // Bundle into a zip-like format (just multiple downloads for now)
